@@ -19,9 +19,6 @@ def buy(id):
             return {"message": "This book is currently unavailable"}, 410
     except :
         return {"message": "This book is currently unavailable"}, 410
-    
-
-
 
 @order_server.errorhandler(404)
 def resource_could_not_found(e):
