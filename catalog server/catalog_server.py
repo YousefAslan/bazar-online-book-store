@@ -22,8 +22,6 @@ def verify_item_in_stock(id):
     book = Book.query.get(id)
     if book:
         if book.quantity > 0:
-            book.quantity -= 1
-            db.session.commit()
             return verify_schema.jsonify(book), 200
         else:
             return {"message": "This book is currently unavailable"}, 410
