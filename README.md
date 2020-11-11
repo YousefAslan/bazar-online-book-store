@@ -7,13 +7,10 @@ bazar online book store. It is a microservices builds based on the RAST API usin
 |book title |topic |
 |----------------|-----------------------------|
 |How to get a good grade in DOS in 20 minutes a day| distributed systems  
-|
 |RPCs for Dummies| distributed systems  
-|
 |Xen and the Art of Surviving Graduate School| graduate school
-|
 |Cooking for the Impatient Graduate Student| graduate school
-|
+
 The project is divided into three main servers:
 
 - front-end server which receive all the request form the user and propagate it back-end servers
