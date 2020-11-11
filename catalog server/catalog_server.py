@@ -53,8 +53,8 @@ def append():
         new_book = Book(title,quantity,cost,topic)
         db.session.add(new_book)
         db.session.commit()
-        return book_search_schema.jsonify(new_book), 201
-    except expression as identifier:
+        return book_lookup_schema.jsonify(new_book), 201
+    except:
         return {"message" : "cant add this book"}, 405
     
 
