@@ -24,18 +24,22 @@ The project is divided into three main servers:
 
 This repository is consist of three main files, each of which represents one of the three servers.
 The order server and catalog server files both contain a python scripts called server_configuration.py through which you can change the IP and the ports number of the servers; Where front-end server contains this information inside the front-end server.py file, both servers are running on localhost. If you want to change the environment to works on a different machine, just modify these files to suit the new environment.
-After that make sure pipenv is installed if not apply the following command on the terminal
+After that make sure pip3 is installed if not apply the following command on the terminal
 
 ```
-$ pip install pipenv
+$ sudo apt install python3-pip
 ```
 
-After that, open the three directors and apply these commands in each server:
+After that, if all three server run at the same machine open the terminal from bazar-online-book-store directory then apply the following commands:
 
 ```
-$ pipenv shell
-$ pipenv install
-$ python <server name>
+$ pip3 install -r requirements.txt
+```
+
+if the three servers run at different machines open the terminal from each machine on the server directory according to its name and apply the following installation command:
+
+```
+$ pip3 install -r requirements.txt
 ```
 
 # The API
