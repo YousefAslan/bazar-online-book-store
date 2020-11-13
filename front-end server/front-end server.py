@@ -2,10 +2,17 @@ from flask import Flask, request, jsonify
 import requests
 import os
 
-order_server_ip = "http://127.0.0.1"
+
+font_end_server_ip = "192.168.199.4"
+font_end_server_port = 2309
+order_server_ip = "192.168.199.3"
 order_server_port = 2311
-catalog_server_ip = "http://127.0.0.1"
+catalog_server_ip = "192.168.199.5"
 catalog_server_port = 2310
+# order_server_ip = "http://127.0.0.1"
+# order_server_port = 2311
+# catalog_server_ip = "http://127.0.0.1"
+# catalog_server_port = 2310
 
 app = Flask(__name__)
 
@@ -36,4 +43,4 @@ def method_not_allowed(e):
     return jsonify({'error': 405}), 405
 
 if __name__ == '__main__':
-  app.run(debug = True, port = 2309)
+  app.run(debug = True, port = 2309, host='0.0.0.0')

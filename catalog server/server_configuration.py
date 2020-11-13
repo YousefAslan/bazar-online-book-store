@@ -3,10 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 import os
 
-font_end_server_ip = "172.0.0.1"
+font_end_server_ip = "192.168.199.4"
 font_end_server_port = 2309
-order_server_ip = "172.0.0.1"
-order_server_port = 2309
+order_server_ip = "192.168.199.3"
+order_server_port = 2311
+catalog_server_ip = "192.168.199.5"
+catalog_server_port = 2310
+# font_end_server_ip = "172.0.0.1"
+# font_end_server_port = 2309
+# order_server_ip = "172.0.0.1"
+# order_server_port = 2309
 
 #initi catalog server
 catalog_server = Flask(__name__)

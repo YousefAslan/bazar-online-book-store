@@ -67,4 +67,4 @@ def method_not_allowed(e):
     return jsonify({'error': 405}), 405
 
 if __name__ == "__main__":
-    catalog_server.run(debug = True, port = 2310)
+    catalog_server.run(debug = True, port = 2310, host= '0.0.0.0')
