@@ -49,7 +49,7 @@ Flask connects each route with a method, so when a request arrives at this URL, 
 ### catalog server and order server
 
 Both order and catalog servers work in the same way as the font-end server, as it is based on **Flask** microservices and the order server uses **request** to communicate with the catalog server.
-What distinguishes each of these two servers is that they contain a database, as they store data in a simple database known as **SQLite**, and communication with the data base in a simple way without the need to write a complex queries SQL Alchemy and Marshmallow was used to interact with the database via object relational mapper.
+What distinguishes each of these two servers is that they contain a database, as they store data in a simple database known as **SQLite**, and communication with the data base in a simple way without the need to write a complex queries **SQL Alchemy** and **Marshmallow** was used to interact with the database via object relational mapper.
 The order server stores all purchases, while the catalog server storing books and their information from quantity, title, topic, and price.
 
 Bazar works fine without any problems, but it may need some improvements to increase security and provide authentication, as it is possible to the the end-user at this moment communicates with the back-end servers directly without verifying the person's identity. Also, bazar servers support a certain number of users, which may cause problems during peak periods, so it is preferable to use more back-end servers that can better distribute the load on them and ensure speedy performance.
