@@ -4,8 +4,14 @@ import requests
 
 @order_server.route("/buy/<int:id>",methods=['PUT'])    
 def buy(id):
+    """
+    this method response to handle the buy request comes from the fron-end server to be completed the purchase order
+    """
     try:
+        # prepare the request that is sent to the catalog server and send it to ensure that the book is in stocks
         responce = requests.get(catalog_server_ip + ':' + str(catalog_server_port) + '/verify_item_in_stock/' + str(id))
+        #  if status code equal 200 and there is books insdie the stocks send a request to the order server 
+        # to completed the purchase order f the currency of the purchase is made, it stores the transaction in the order database
         if responce.status_code == 200 and responce.json()['quantity'] > 0:
             responce = requests.put(catalog_server_ip + ':' + str(catalog_server_port) + '/buy/' + str(id))
             if responce.status_code == 204:
