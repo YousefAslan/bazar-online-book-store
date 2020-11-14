@@ -39,6 +39,12 @@ if the three servers run at different machines open the terminal from each machi
 $ pip3 install -r requirements.txt
 ```
 
+finally to run the three servers open the terminal from ther directoreis and apply the following commands:
+
+```
+$ python3 '<server name.py>'
+```
+
 ## about the servrs
 
 ### front-end server
