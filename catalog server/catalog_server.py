@@ -10,14 +10,15 @@ def search(topic):
     Then check if query response if there is any books under this topic and send it unser 200 status code 
     otherwise the server will responce with 410 status code with message says there are no books under ths topic right now  
     """
-    books = Book.query.filter_by(topic= topic).all()
+    # books = Book.query.filter_by(topic= topic).all()
     try:
+        books = Book.query.filter_by(topic= topic).all()
         if len(books) > 0:
             return books_search_schema.jsonify(books),200
         else:
-            return {"message": "There are no books under this topic"}, 410
+            return {"message": "There are no books under this topic"}, 404
     except :
-        return {"message": "There are no books under this topic"}, 410
+        return {"message": "There are no books under this topic"}, 404
         
     
 @catalog_server.route("/lookup/<int:id>",methods=['GET'])

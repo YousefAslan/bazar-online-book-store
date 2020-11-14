@@ -21,10 +21,12 @@ def buy(id):
                 return order_schema.jsonify(orders), 201
             else:
                 return {"message": "This book is currently unavailable"}, 410
+        elif responce.status_code == 404:
+            return {"message": "This book unavailable"}, 404
         else:
             return {"message": "This book is currently unavailable"}, 410
     except :
-        return {"message": "This book is currently unavailable"}, 410
+        return {"message": "The server is not ready to handle the request"}, 503
 
 @order_server.errorhandler(404)
 def resource_could_not_found(e):
