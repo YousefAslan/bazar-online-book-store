@@ -28,8 +28,8 @@ def verify_item_in_stock(id):
     else:
         return {"message": "There is no book with this ID"}, 404
 
-@catalog_server.route("/update/<int:id>",methods=['PUT'])
-def update(id):
+@catalog_server.route("/buy/<int:id>",methods=['PUT'])
+def buy(id):
     book = Book.query.get(id)
     if book:
         if book.quantity > 0:
@@ -40,7 +40,32 @@ def update(id):
             return {"message": "This book is currently unavailable"}, 410
     else:
         return {"message": "There is no book with this ID"}, 404
-    
+
+@catalog_server.route("/update/price/<int:id>",methods=['PUT'])
+def update_cost(id):
+    book = Book.query.get(id)
+    if book:
+        try:
+            book.price = request.json['price']
+            db.session.commit()
+            return book_lookup_schema.jsonify(book), 200
+        except :
+            return {"message":"bad request can not handle the request due to invaled data"}, 400
+    else:
+        return {"message": "There is no book with this ID"}, 404    
+
+@catalog_server.route("/update/item/<int:id>",methods=['PUT'])
+def update_item_number(id):
+    book = Book.query.get(id)
+    if book:
+        try:
+            book.quantity = request.json['quantity']
+            db.session.commit()
+            return book_lookup_schema.jsonify(book), 200
+        except :
+            return {"message":"bad request can not handle the request due to invaled data"}, 400
+    else:
+        return {"message": "There is no book with this ID"}, 404    
 
 @catalog_server.route("/append",methods=['POST'])    
 def append():

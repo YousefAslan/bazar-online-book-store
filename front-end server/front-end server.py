@@ -1,18 +1,19 @@
 from flask import Flask, request, jsonify
+from flask import json
 import requests
 import os
 
 
-font_end_server_ip = "192.168.199.4"
-font_end_server_port = 2309
-order_server_ip = "192.168.199.3"
-order_server_port = 2311
-catalog_server_ip = "192.168.199.5"
-catalog_server_port = 2310
-# order_server_ip = "http://127.0.0.1"
+# font_end_server_ip = "192.168.199.4"
+# font_end_server_port = 2309
+# order_server_ip = "192.168.199.3"
 # order_server_port = 2311
-# catalog_server_ip = "http://127.0.0.1"
+# catalog_server_ip = "192.168.199.5"
 # catalog_server_port = 2310
+order_server_ip = "http://127.0.0.1"
+order_server_port = 2311
+catalog_server_ip = "http://127.0.0.1"
+catalog_server_port = 2310
 
 app = Flask(__name__)
 
@@ -32,6 +33,20 @@ def lookup(id):
 @app.route('/buy/<int:id>',methods = ['PUT'])
 def buy(id):
     responce = requests.put(order_server_ip + ':' + str(order_server_port) + '/buy/' + str(id))
+    return jsonify(responce.json()), responce.status_code
+
+@app.route("/update/price/<int:id>",methods=['PUT'])
+def update_price(id):
+    headers = {'Content-type': 'application/json'}
+    jsons = request.json
+    responce = requests.put(catalog_server_ip + ':' + str(catalog_server_port) + '/update/price/' + str(id), json= jsons, headers =headers)
+    return jsonify(responce.json()), responce.status_code
+
+@app.route("/update/item/<int:id>",methods=['PUT'])
+def update_item_number(id):
+    headers = {'Content-type': 'application/json'}
+    jsons = request.json
+    responce = requests.put(catalog_server_ip + ':' + str(catalog_server_port) + '/update/item/' + str(id), json= jsons, headers =headers)
     return jsonify(responce.json()), responce.status_code
 
 @app.errorhandler(404)

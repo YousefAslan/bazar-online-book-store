@@ -7,7 +7,7 @@ def buy(id):
     try:
         responce = requests.get(catalog_server_ip + ':' + str(catalog_server_port) + '/verify_item_in_stock/' + str(id))
         if responce.status_code == 200 and responce.json()['quantity'] > 0:
-            responce = requests.put(catalog_server_ip + ':' + str(catalog_server_port) + '/update/' + str(id))
+            responce = requests.put(catalog_server_ip + ':' + str(catalog_server_port) + '/buy/' + str(id))
             if responce.status_code == 204:
                 orders = Orders(id)
                 db.session.add(orders)
