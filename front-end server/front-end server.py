@@ -9,14 +9,17 @@ class ServerType(Enum):
     represent the server
     """
     CATALOG = 1
-    LOOKUP = 2
+    ORDER = 2
+    
 
 class RequestType(Enum):
     """
     represent the server
     """
     SEARCH = 1
-    ORDER = 2
+    LOOKUP = 2
+    UPDATE = 3
+    BUY = 4
 
 order_server_ip = "http://127.0.0.1"
 order_server_port = 2311
@@ -40,10 +43,15 @@ def search(topic):
     # TODO: implement the cache
     # cache miss ask the server
     if not checkCache(RequestType.SEARCH ,topic) : 
-        selectedServer = selectServer(ServerType.CATALOG)
-        responce = requests.get(selectedServer + '/search/' + topic)
-        return jsonify(responce.json()), responce.status_code
-
+        for attempt in range(len(catalog_servers)):
+            selectedServer = selectServer(ServerType.CATALOG)
+            try:
+                responce = requests.get(selectedServer + '/search/' + topic)
+                # save to the cache
+                return jsonify(responce.json()), responce.status_code
+            except:
+                pass
+        return {"message": " server is not ready to handle the request"}, 503
     else:
         # return the cache value 
         return {},500
@@ -57,25 +65,19 @@ def lookup(id):
     and response to the end-user
 
     """
-    # TODO:implement the cache
     if not checkCache(RequestType.LOOKUP ,id) : 
-        selectedServer = selectServer(ServerType.CATALOG)
-        responce = requests.get(selectedServer + '/lookup/' + str(id))
-        return jsonify(responce.json()), responce.status_code
+        for attempt in range(len(catalog_servers)):
+            selectedServer = selectServer(ServerType.CATALOG)
+            try:
+                responce = requests.get(selectedServer + '/lookup/' + str(id))
+                # save to the cache
+                return jsonify(responce.json()), responce.status_code
+            except:
+                pass
+        return {"message": " server is not ready to handle the request"}, 503
     else:
         # return the cache value 
         return {},500
-        
-@app.route('/buy/<int:id>',methods = ['PUT'])
-def buy(id):
-    """
-    mapping the coming put request on the route buy/<id> to buy method
-    Their purpose is to purchase this item based on the attached id and url by sending it to another server called order server
-    to handle the purchase process and with response which indicate if this process done or not
-
-    """
-    responce = requests.put(order_server_ip + ':' + str(order_server_port) + '/buy/' + str(id))
-    return jsonify(responce.json()), responce.status_code
 
 @app.route("/update/price/<int:id>",methods=['PUT'])
 def update_price(id):
@@ -84,10 +86,17 @@ def update_price(id):
     Their purpose is to send a put request to the catalog server to update the price of a spacefice item based on the id
 
     """
+    
     headers = {'Content-type': 'application/json'}
     jsons = request.json
-    responce = requests.put(catalog_server_ip + ':' + str(catalog_server_port) + '/update/price/' + str(id), json= jsons, headers =headers)
-    return jsonify(responce.json()), responce.status_code
+    for attempt in range(len(catalog_servers)):
+        selectedServer = selectServer(ServerType.CATALOG)
+        try:
+            responce = requests.put(selectedServer + '/update/price/' + str(id), json = jsons, headers = headers)
+            return jsonify(responce.json()), responce.status_code
+        except:
+            pass
+    return {"message": " server is not ready to handle the request"}, 503
 
 @app.route("/update/item/<int:id>",methods=['PUT'])
 def update_item_number(id):
@@ -98,8 +107,35 @@ def update_item_number(id):
     """
     headers = {'Content-type': 'application/json'}
     jsons = request.json
-    responce = requests.put(catalog_server_ip + ':' + str(catalog_server_port) + '/update/item/' + str(id), json= jsons, headers =headers)
-    return jsonify(responce.json()), responce.status_code
+    for attempt in range(len(catalog_servers)):
+        selectedServer = selectServer(ServerType.CATALOG)
+        try:
+            responce = requests.put(selectedServer + '/update/item/' + str(id), json = jsons, headers = headers)
+            return jsonify(responce.json()), responce.status_code
+        except:
+            pass
+    return {"message": " server is not ready to handle the request"}, 503
+
+
+@app.route('/buy/<int:id>',methods = ['PUT'])
+def buy(id):
+    """
+    mapping the coming put request on the route buy/<id> to buy method
+    Their purpose is to purchase this item based on the attached id and url by sending it to another server called order server
+    to handle the purchase process and with response which indicate if this process done or not
+
+    """
+
+    for attempt in range(len(catalog_servers)):
+        selectedServer = selectServer(ServerType.ORDER)
+        try:
+            responce = requests.put(selectedServer + '/buy/' + str(id))
+            return jsonify(responce.json()), responce.status_code
+        except:
+            pass
+    return {"message": " server is not ready to handle the request"}, 503
+
+
 
 @app.errorhandler(404)
 def resource_could_not_found(e):
