@@ -135,7 +135,13 @@ def buy(id):
             pass
     return {"message": " server is not ready to handle the request"}, 503
 
-
+# TODO: not implemented yet
+@app.route('/invalidate/<int:id>', methods = ['DELETE'])
+def invalidate(id):
+    """
+    invalidate request comes from any back-end server to invalidate item cached value
+    """
+    return {"message": "the item removed from the cache"}, 200
 
 @app.errorhandler(404)
 def resource_could_not_found(e):
