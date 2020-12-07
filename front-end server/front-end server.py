@@ -1,7 +1,15 @@
 from flask import Flask, request, jsonify
 from flask import json
 import requests
+from enum import Enum
 import os
+
+class ServerType(Enum):
+    """
+    represent the server
+    """
+    CATALOG = 1
+    LOOKUP = 2
 
 
 # font_end_server_ip = "192.168.199.4"
