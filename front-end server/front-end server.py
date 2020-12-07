@@ -120,5 +120,12 @@ def selectServer(serverType: ServerType):
 
     selectedServer = (++nextSelectedServer) % len(order_servers)
     return catalog_servers[selectedServer] if serverType == ServerType.CATALOG else order_servers[selectedServer]
+
+def checkCache(requestType: RequestType, data):
+    """
+    docstring
+    """
+    return False
+
 if __name__ == '__main__':
   app.run(debug = True, port = 2309, host='0.0.0.0')
