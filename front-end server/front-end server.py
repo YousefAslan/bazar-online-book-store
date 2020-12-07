@@ -18,16 +18,14 @@ class RequestType(Enum):
     SEARCH = 1
     ORDER = 2
 
-# font_end_server_ip = "192.168.199.4"
-# font_end_server_port = 2309
-# order_server_ip = "192.168.199.3"
-# order_server_port = 2311
-# catalog_server_ip = "192.168.199.5"
-# catalog_server_port = 2310
 order_server_ip = "http://127.0.0.1"
 order_server_port = 2311
 catalog_server_ip = "http://127.0.0.1"
 catalog_server_port = 2310
+
+catalog_servers = ["http://127.0.0.1:2310",]
+order_servers = ["http://127.0.0.1:2311", ]
+nextSelectedServer = 0
 
 app = Flask(__name__)
 
