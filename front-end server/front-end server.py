@@ -98,5 +98,12 @@ def resource_could_not_found(e):
 def method_not_allowed(e):
     return jsonify({'message': " the server but is not supported by the target resource"}), 405
 
+def selectServer(serverType: ServerType):
+    """
+    select which replica responsible for handling this request
+    """
+
+    selectedServer = (++nextSelectedServer) % len(order_servers)
+    return catalog_servers[selectedServer] if serverType == ServerType.CATALOG else order_servers[selectedServer]
 if __name__ == '__main__':
   app.run(debug = True, port = 2309, host='0.0.0.0')
