@@ -37,8 +37,17 @@ def search(topic):
     and await a response from the catalog to be responded on the end-user.
 
     """
-    responce = requests.get(catalog_server_ip + ':' + str(catalog_server_port) + '/search/' + topic)
-    return jsonify(responce.json()), responce.status_code
+    # TODO: implement the cache
+    # cache miss ask the server
+    if not checkCache(RequestType.SEARCH ,topic) : 
+        selectedServer = selectServer(ServerType.CATALOG)
+        responce = requests.get(selectedServer + '/search/' + topic)
+        return jsonify(responce.json()), responce.status_code
+
+    else:
+        # return the cache value 
+        return {},500
+
 
 @app.route('/lookup/<int:id>',methods = ['GET'])
 def lookup(id):
@@ -48,9 +57,15 @@ def lookup(id):
     and response to the end-user
 
     """
-    responce = requests.get(catalog_server_ip + ':' + str(catalog_server_port) + '/lookup/' + str(id))
-    return jsonify(responce.json()), responce.status_code
-
+    # TODO:implement the cache
+    if not checkCache(RequestType.LOOKUP ,id) : 
+        selectedServer = selectServer(ServerType.CATALOG)
+        responce = requests.get(selectedServer + '/lookup/' + str(id))
+        return jsonify(responce.json()), responce.status_code
+    else:
+        # return the cache value 
+        return {},500
+        
 @app.route('/buy/<int:id>',methods = ['PUT'])
 def buy(id):
     """
