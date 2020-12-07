@@ -11,6 +11,12 @@ class ServerType(Enum):
     CATALOG = 1
     LOOKUP = 2
 
+class RequestType(Enum):
+    """
+    represent the server
+    """
+    SEARCH = 1
+    ORDER = 2
 
 # font_end_server_ip = "192.168.199.4"
 # font_end_server_port = 2309
