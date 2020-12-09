@@ -62,19 +62,29 @@ def update_cost(id):
     then its send the response to the front-end server
 
     """
-    # get the book from database
     book = Book.query.get(id)
     if book:
-        try:
-            #try get the price from rhe request if its exist and update the price(cost)
-            # if not sedn message with 400 indicates a bad request
+        if 'price' in request.json and isinstance(request.json['price'], numbers.Number):
             book.cost = request.json['price']
+            try:
+                response = requests.get(front_end_server + '/invalidate/' + str(id))
+            except:
+                pass
+            headers = {'Content-type': 'application/json'}
+            json = book_schema(book)
+            try:
+                response = requests.put(second_catalog_server + '/sync/', headers = headers, json= json)
+            except:
+                json["server_ip"] = second_catalog_server
+                # TODO: send request to the recovery server
             db.session.commit()
             return book_lookup_schema.jsonify(book), 200
-        except :
+
+        else:
             return {"message":"bad request can not handle the request due to invaled data"}, 400
     else:
         return {"message": "There is no book with this ID"}, 404    
+ 
 
 @catalog_server.route("/update/item/<int:id>",methods=['PUT'])
 def update_item_number(id):
@@ -84,19 +94,28 @@ def update_item_number(id):
     then its send the response to the front-end server
 
     """
-    # get the book from database
     book = Book.query.get(id)
     if book:
-        try:
-            #try get the quantity from rhe request if its exist and update the quantity
-            # if not sedn message with 400 indicates a bad request
+        if 'quantity' in request.json and isinstance(request.json['quantity'], numbers.Number):
             book.quantity = request.json['quantity']
+            try:
+                response = requests.get(front_end_server + '/invalidate/' + str(id))
+            except:
+                pass
+            headers = {'Content-type': 'application/json'}
+            json = book_schema(book)
+            try:
+                response = requests.put(second_catalog_server + '/sync/', headers = headers, json= json)
+            except:
+                json["server_ip"] = second_catalog_server
+                # TODO: send request to the recovery server
             db.session.commit()
             return book_lookup_schema.jsonify(book), 200
-        except :
+        else:
             return {"message":"bad request can not handle the request due to invaled data"}, 400
     else:
-        return {"message": "There is no book with this ID"}, 404    
+        return {"message": "There is no book with this ID"}, 404  
+
 @catalog_server.route("/buy/<int:id>",methods=['PUT'])
 def buy(id):
     """
