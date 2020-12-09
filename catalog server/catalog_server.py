@@ -1,4 +1,6 @@
 from flask.globals import request
+import requests
+import numbers
 from server_configuration import *
 
 @catalog_server.route("/search/<string:topic>",methods=['GET'])
@@ -14,13 +16,13 @@ def search(topic):
     try:
         books = Book.query.filter_by(topic= topic).all()
         if len(books) > 0:
-            return books_search_schema.jsonify(books),200
+            return books_schema.jsonify(books),200
         else:
             return {"message": "There are no books under this topic"}, 404
     except :
         return {"message": "There are no books under this topic"}, 404
         
-    
+
 @catalog_server.route("/lookup/<int:id>",methods=['GET'])
 def lookup(id):
     """
@@ -32,7 +34,7 @@ def lookup(id):
     # check if there is a book with that id if not send a message with 404 says there is no book with this id
     if book:
         # return a responce with the book infromation from title, quantity, and cost
-        return book_lookup_schema.jsonify(book), 200
+        return book_schema.jsonify(book), 200
     else:
         return {"message" : "There is no book with this ID"}, 404
     
