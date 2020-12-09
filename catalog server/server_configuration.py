@@ -1,7 +1,26 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy 
 from flask_marshmallow import Marshmallow
+from enum import Enum
 import os
+
+
+class ServerType(Enum):
+    """
+    represent the server
+    """
+    FRONT = 1
+    CATALOG = 2
+    ORDER = 3
+    
+class RequestType(Enum):
+    """
+    represent the server
+    """
+    SEARCH = 1
+    LOOKUP = 2
+    UPDATE = 3
+    BUY = 4
 
 front_end_server = "http://127.0.0.1:2309"
 catalog_servers = ["http://127.0.0.1:2310",]
