@@ -165,7 +165,7 @@ def buy(id):
     else:
         return {"message": "There is no book with this ID"}, 404 
 
-@catalog_server.route("/sync/",method = ['PUT'])
+@catalog_server.route("/sync",methods=['PUT'])  
 def syncUpDateInfo():
     """
     handle the sync between catalog servers
