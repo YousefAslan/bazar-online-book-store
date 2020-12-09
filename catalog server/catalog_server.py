@@ -54,28 +54,6 @@ def verify_item_in_stock(id):
     else:
         return {"message": "There is no book with this ID"}, 404
 
-@catalog_server.route("/buy/<int:id>",methods=['PUT'])
-def buy(id):
-    """
-    apply the buy methos comes from the oder server
-
-    """
-    # get the book with id sends inside the request 
-    book = Book.query.get(id)
-    # check if there is a book with that id if not send a message with 404 says there is no book with this id
-    if book:
-        # if the book exsist in side the stocks decremnt it and update the changes
-        # and return 204 status code indicates that the request has succeeded
-        if book.quantity > 0:
-            book.quantity -= 1
-            db.session.commit()
-            return {}, 204
-        else:
-            # otherwise if out of stock return a message says This book is currently unavailable
-            return {"message": "This book is currently unavailable"}, 410
-    else:
-        return {"message": "There is no book with this ID"}, 404
-
 @catalog_server.route("/update/price/<int:id>",methods=['PUT'])
 def update_cost(id):
     """
@@ -119,6 +97,56 @@ def update_item_number(id):
             return {"message":"bad request can not handle the request due to invaled data"}, 400
     else:
         return {"message": "There is no book with this ID"}, 404    
+@catalog_server.route("/buy/<int:id>",methods=['PUT'])
+def buy(id):
+    """
+    apply the buy methos comes from the oder server
+
+    """
+    # get the book with id sends inside the request 
+    book = Book.query.get(id)
+    # check if there is a book with that id if not send a message with 404 says there is no book with this id
+    if book:
+        # if the book exsist in side the stocks decremnt it and update the changes
+        # and return 204 status code indicates that the request has succeeded
+        if book.quantity > 0:
+            book.quantity -= 1
+            db.session.commit()
+            return {}, 204
+        else:
+            # otherwise if out of stock return a message says This book is currently unavailable
+            return {"message": "This book is currently unavailable"}, 410
+    else:
+        return {"message": "There is no book with this ID"}, 404 
+    # get the book with id sends inside the request 
+    book = Book.query.get(id)
+    if book:
+        # if the book exsist in side the stocks decremnt it and update the changes
+        # and return 204 status code indicates that the request has succeeded
+        if  book.quantity > 0:
+            book.quantity -= 1
+            try:
+                # try to push invalidate notification to the front end server
+                response = requests.get(front_end_server + '/invalidate/' + str(id))
+            except:
+                pass
+            headers = {'Content-type': 'application/json'}
+            json = book_schema(book)
+            try:
+                # try to push update notification to the second catalog server 
+                response = requests.put(second_catalog_server + '/sync/', headers = headers, json= json)
+            except:
+                json["server_ip"] = second_catalog_server
+                # TODO: send request to the recovery server
+            db.session.commit()
+            return {}, 204
+        else:
+            # otherwise if out of stock return a message says This book is currently unavailable
+            return {"message": "This book is currently unavailable"}, 410
+    else:
+        return {"message": "There is no book with this ID"}, 404 
+
+@catalog_server.route("/sync/",method = ['PUT'])
 
 @catalog_server.route("/append",methods=['POST'])    
 def append():
