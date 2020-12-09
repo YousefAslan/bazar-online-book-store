@@ -8,8 +8,9 @@ class ServerType(Enum):
     """
     represent the server
     """
-    CATALOG = 1
-    ORDER = 2
+    FRONT = 1
+    CATALOG = 2
+    ORDER = 3
     
 
 class RequestType(Enum):
@@ -163,6 +164,7 @@ def selectServer(serverType: ServerType):
     selectedServer = (++nextSelectedServer) % len(order_servers)
     return catalog_servers[selectedServer] if serverType == ServerType.CATALOG else order_servers[selectedServer]
 
+# TODO: not implemented yet
 def checkCache(requestType: RequestType, data):
     """
     docstring
