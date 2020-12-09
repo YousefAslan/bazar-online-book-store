@@ -35,8 +35,24 @@ def buy(id):
             return {"message": "This book unavailable"}, 404
         else:
             return {"message": "This book is currently unavailable"}, 410
-    except :
+    except:
         return {"message": "The server is not ready to handle the request"}, 503
+
+
+@order_server.route("/sync",methods=['PUT'])  
+def syncUpDateInfo():
+    """
+    handle the sync between order servers
+    if other order servers update there database 
+    the sync update info will be called to infrom this server about this updates
+    """
+    try:
+        order = Orders(request.json['order_id'])
+        db.session.add(order)
+        db.session.commit()
+        return order_schema.jsonify(orders), 200
+    except:
+        return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
 
 @order_server.errorhandler(404)
 def resource_could_not_found(e):
