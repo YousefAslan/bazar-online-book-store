@@ -3,16 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 import os
 
-# font_end_server_ip = "192.168.199.4"
-# font_end_server_port = 2309
-# order_server_ip = "192.168.199.3"
-# order_server_port = 2311
-# catalog_server_ip = "192.168.199.5"
-# catalog_server_port = 2310
-# font_end_server_ip = "172.0.0.1"
-# font_end_server_port = 2309
-# order_server_ip = "172.0.0.1"
-# order_server_port = 2309
+front_end_server = "http://127.0.0.1:2309"
+catalog_servers = ["http://127.0.0.1:2310",]
+order_servers = ["http://127.0.0.1:2311", ]
+this_server = "http://127.0.0.1:2310"
+# TODO: need to update it
+second_catalog_server = "http://127.0.0.1:2310"
 
 # init flask calalog server which responce to handle the requests comming from the front-end and order-servers
 catalog_server = Flask(__name__)
