@@ -166,6 +166,28 @@ def buy(id):
         return {"message": "There is no book with this ID"}, 404 
 
 @catalog_server.route("/sync/",method = ['PUT'])
+def syncUpDateInfo():
+    """
+    handle the sync between catalog servers
+    if other cataolg servers update there database 
+    the sync update info will be called to infrom this server about this updates
+    """
+    book = None
+    try:
+        book = Book.query.get(request.json['id'])
+        if book:
+            book.title = request.json['title']
+            book.quantity = request.json['quantity']
+            book.cost = request.json['cost']
+            book.topic = request.json['topic']
+        else:
+            new_book = Book(request.json['title'],request.json['quantity'],request.json['cost'],request.json['topic'])
+            db.session.add(new_book)
+    except:
+        return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
+
+    db.session.commit()
+    return BookSchema.jsonify(book), 200
 
 @catalog_server.route("/append",methods=['POST'])    
 def append():
