@@ -1,6 +1,6 @@
-from requests.api import request
-from server_configuration import *
+from flask.globals import request
 import requests
+from server_configuration import *
 
 @order_server.route("/buy/<int:id>",methods=['PUT'])    
 def buy(id):
@@ -8,14 +8,24 @@ def buy(id):
     this method response to handle the buy request comes from the fron-end server to be completed the purchase order
     """
     try:
-        # prepare the request that is sent to the catalog server and send it to ensure that the book is in stocks
-        responce = requests.get(catalog_server_ip + ':' + str(catalog_server_port) + '/verify_item_in_stock/' + str(id))
-        #  if status code equal 200 and there is books insdie the stocks send a request to the order server 
-        # to completed the purchase order f the currency of the purchase is made, it stores the transaction in the order database
-        if responce.status_code == 200 and responce.json()['quantity'] > 0:
-            responce = requests.put(catalog_server_ip + ':' + str(catalog_server_port) + '/buy/' + str(id))
+        # ensure that the book is in stocks vias send requiest to the catalog server
+        responce = requests.get(catalog_server + '/verify_item_in_stock/' + str(id))
+        #  if status code 200 and which means there is books at the stock
+        # to completed the purchase order send buy request for the catalog server
+        if  responce.status_code == 200 and responce.json()['quantity'] > 0:
+            responce = requests.put(catalog_server + '/buy/' + str(id))
             if responce.status_code == 204:
                 orders = Orders(id)
+                headers = {'Content-type': 'application/json'}
+                json = book_schema(orders)
+                try:
+                    responce = requests.put(second_order_server + '/sync',json= json, headers= headers)
+                    if responce.status_code != 200:
+                        return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
+                except:
+                    json["server_ip"] = second_catalog_server
+                    # TODO: send for recovery server
+
                 db.session.add(orders)
                 db.session.commit()
                 return order_schema.jsonify(orders), 201
