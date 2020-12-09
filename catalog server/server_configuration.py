@@ -69,6 +69,10 @@ class Book(db.Model):
   Book search Schema Schema, Book lookup Schema, and Verify Schema all are flask marshmallow schema
   which makes it easy to convert database queries results into data that can be read and sent in the responce
 """
+class BookSchema(ma.Schema):
+  class Meta:
+    fields = ('id', 'title', 'quantity', 'cost', 'topic')
+
 class BookSearchSchema(ma.Schema):
   class Meta:
     fields = ('id', 'title')
@@ -82,6 +86,9 @@ class VerifySchema(ma.Schema):
     fields = ('id', 'quantity')
 
 # create an instance of the diagrams for use on the server
+book_schema = BookSchema()
+books_schema = BookSchema(many = True)
+
 books_search_schema = BookSearchSchema(many=True)
 book_lookup_schema = BooklookupSchema()
 verify_schema = VerifySchema()
