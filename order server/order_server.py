@@ -15,9 +15,11 @@ def buy(id):
         if  responce.status_code == 200 and responce.json()['quantity'] > 0:
             responce = requests.put(catalog_server + '/buy/' + str(id))
             if responce.status_code == 204:
+                print("the id is: " + str(id))
                 orders = Orders(id)
+                print("the order is: ")
                 headers = {'Content-type': 'application/json'}
-                json = book_schema(orders)
+                json = order_schema.dump(orders)
                 try:
                     responce = requests.put(second_order_server + '/sync',json= json, headers= headers)
                     if responce.status_code != 200:
@@ -46,11 +48,13 @@ def syncUpDateInfo():
     if other order servers update there database 
     the sync update info will be called to infrom this server about this updates
     """
+    print(request.json)
     try:
-        order = Orders(request.json['order_id'])
+        order = Orders(request.json['book_id'])
+        print("apple")
         db.session.add(order)
         db.session.commit()
-        return order_schema.jsonify(orders), 200
+        return order_schema.jsonify(order), 200
     except:
         return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
 
