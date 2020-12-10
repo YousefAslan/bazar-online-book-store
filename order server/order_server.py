@@ -15,9 +15,9 @@ def buy(id):
         if  responce.status_code == 200 and responce.json()['quantity'] > 0:
             responce = requests.put(catalog_server + '/buy/' + str(id))
             if responce.status_code == 204:
-                print("the id is: " + str(id))
                 orders = Orders(id)
-                print("the order is: ")
+                db.session.add(orders)
+                db.session.commit()
                 headers = {'Content-type': 'application/json'}
                 json = order_schema.dump(orders)
                 try:
@@ -25,11 +25,9 @@ def buy(id):
                     if responce.status_code != 200:
                         return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
                 except:
-                    json["server_ip"] = second_catalog_server
-                    # TODO: send for recovery server
+                    json["server"] = second_order_server                
+                    response = requests.post(recovery_server + '/addOrder', json= json, headers= headers)
 
-                db.session.add(orders)
-                db.session.commit()
                 return order_schema.jsonify(orders), 201
             else:
                 return {"message": "This book is currently unavailable"}, 410
@@ -48,10 +46,8 @@ def syncUpDateInfo():
     if other order servers update there database 
     the sync update info will be called to infrom this server about this updates
     """
-    print(request.json)
     try:
         order = Orders(request.json['book_id'])
-        print("apple")
         db.session.add(order)
         db.session.commit()
         return order_schema.jsonify(order), 200
