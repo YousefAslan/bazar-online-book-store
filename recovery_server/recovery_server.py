@@ -84,22 +84,25 @@ def addBook():
 
 @recovery_server.route("/addOrder",methods=['POST'])
 def addOrder():
-    # try:
-    print("no")
-    server = request.json['server']
-    order_id = request.json['order_id']
-    book_id = request.json['book_id']
-    print("app")
-    #  server, order_id, book_id):
-    new_order = Orders(server, order_id, book_id)
-    print("goo")
-    db.session.add(new_order)
-    print("goo")
-    db.session.commit()
-    print("goo")
-    return order_schema.jsonify(new_order), 201
-    # except:
-    #     return {"message" : "cant add this order"}, 405   
+    try:
+        server = request.json['server']
+        order_id = request.json['order_id']
+        book_id = request.json['book_id']
+
+        new_order = Orders(server, order_id, book_id)
+        try:        
+            order = Orders.query.filter_by(server= server, id =id).first()
+            order.server = server
+            order.order_id = order_id
+            order.book_id = book_id
+            db.session.commit()
+        except:
+            db.session.add(new_order)
+            db.session.commit()
+        
+        return order_schema.jsonify(new_order), 201
+    except:
+        return {"message" : "cant add this order"}, 405   
 
 @recovery_server.route("/getOrder/<string:server>",methods=['GET'])
 def getOrder(server):
