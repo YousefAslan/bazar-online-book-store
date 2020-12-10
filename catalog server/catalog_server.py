@@ -71,14 +71,14 @@ def update_cost(id):
             except:
                 pass
             headers = {'Content-type': 'application/json'}
-            json = book_schema(book)
+            json = book_schema.dump(book)
             try:
-                response = requests.put(second_catalog_server + '/sync/', headers = headers, json= json)
+                response = requests.put(second_catalog_server + '/sync', headers = headers, json= json)
             except:
                 json["server_ip"] = second_catalog_server
                 # TODO: send request to the recovery server
             db.session.commit()
-            return book_lookup_schema.jsonify(book), 200
+            return book_schema.jsonify(book), 200
 
         else:
             return {"message":"bad request can not handle the request due to invaled data"}, 400
@@ -103,14 +103,14 @@ def update_item_number(id):
             except:
                 pass
             headers = {'Content-type': 'application/json'}
-            json = book_schema(book)
+            json =  book_schema.dump(book)
             try:
-                response = requests.put(second_catalog_server + '/sync/', headers = headers, json= json)
+                response = requests.put(second_catalog_server + '/sync', headers = headers, json= json)
             except:
                 json["server_ip"] = second_catalog_server
                 # TODO: send request to the recovery server
             db.session.commit()
-            return book_lookup_schema.jsonify(book), 200
+            return  book_schema.jsonify(book), 200
         else:
             return {"message":"bad request can not handle the request due to invaled data"}, 400
     else:
@@ -124,21 +124,6 @@ def buy(id):
     """
     # get the book with id sends inside the request 
     book = Book.query.get(id)
-    # check if there is a book with that id if not send a message with 404 says there is no book with this id
-    if book:
-        # if the book exsist in side the stocks decremnt it and update the changes
-        # and return 204 status code indicates that the request has succeeded
-        if book.quantity > 0:
-            book.quantity -= 1
-            db.session.commit()
-            return {}, 204
-        else:
-            # otherwise if out of stock return a message says This book is currently unavailable
-            return {"message": "This book is currently unavailable"}, 410
-    else:
-        return {"message": "There is no book with this ID"}, 404 
-    # get the book with id sends inside the request 
-    book = Book.query.get(id)
     if book:
         # if the book exsist in side the stocks decremnt it and update the changes
         # and return 204 status code indicates that the request has succeeded
@@ -150,10 +135,10 @@ def buy(id):
             except:
                 pass
             headers = {'Content-type': 'application/json'}
-            json = book_schema(book)
+            json = book_schema.dump(book)
             try:
                 # try to push update notification to the second catalog server 
-                response = requests.put(second_catalog_server + '/sync/', headers = headers, json= json)
+                response = requests.put(second_catalog_server + '/sync', headers = headers, json= json)
             except:
                 json["server_ip"] = second_catalog_server
                 # TODO: send request to the recovery server
@@ -187,7 +172,7 @@ def syncUpDateInfo():
         return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
 
     db.session.commit()
-    return BookSchema.jsonify(book), 200
+    return book_schema.jsonify(book), 200
 
 @catalog_server.route("/append",methods=['POST'])    
 def append():
