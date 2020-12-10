@@ -68,8 +68,16 @@ def addBook():
         topic = request.json['topic']
 
         new_book = Book(id, server, title, quantity, cost, topic)
-        db.session.add(new_book)
-        db.session.commit()
+        try:
+            book = Book.query.filter_by(server= server, id =id).first()
+            book.title = title
+            book.quantity = quantity
+            book.cost = cost
+            book.topic = topic
+            db.session.commit()
+        except:
+            db.session.add(new_book)
+            db.session.commit()
         return book_schema.jsonify(new_book), 201
     except:
         return {"message" : "cant add this book"}, 405
