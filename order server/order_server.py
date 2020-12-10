@@ -67,4 +67,4 @@ def method_not_allowed(e):
     return jsonify({'errdor': 405}), 405
 
 if __name__ == "__main__":
-    order_server.run(debug = True, port = 2311, host= '0.0.0.0')
+    order_server.run(debug = True, port = 2040, host= '0.0.0.0')

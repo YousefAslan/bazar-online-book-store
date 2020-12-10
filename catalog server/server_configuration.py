@@ -22,12 +22,9 @@ class RequestType(Enum):
     UPDATE = 3
     BUY = 4
 
-front_end_server = "http://127.0.0.1:2309"
-catalog_servers = ["http://127.0.0.1:2310",]
-order_servers = ["http://127.0.0.1:2311", ]
-this_server = "http://127.0.0.1:2310"
-# TODO: need to update it
-second_catalog_server = "http://127.0.0.1:2310"
+front_end_server = "http://127.0.0.1:2020"
+this_server = "http://127.0.0.1:2030"
+second_catalog_server = "http://127.0.0.1:2031"
 
 # init flask calalog server which responce to handle the requests comming from the front-end and order-servers
 catalog_server = Flask(__name__)

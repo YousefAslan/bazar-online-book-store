@@ -22,13 +22,9 @@ class RequestType(Enum):
     UPDATE = 3
     BUY = 4
 
-order_server_ip = "http://127.0.0.1"
-order_server_port = 2311
-catalog_server_ip = "http://127.0.0.1"
-catalog_server_port = 2310
 
-catalog_servers = ["http://127.0.0.1:2310",]
-order_servers = ["http://127.0.0.1:2311", ]
+catalog_servers = ["http://127.0.0.1:2030", "http://127.0.0.1:2031"]
+order_servers = ["http://127.0.0.1:2040", "http://127.0.0.1:2041"]
 nextSelectedServer = 0
 
 app = Flask(__name__)
@@ -160,9 +156,10 @@ def selectServer(serverType: ServerType):
     """
     select which replica responsible for handling this request
     """
-
-    selectedServer = (++nextSelectedServer) % len(order_servers)
-    return catalog_servers[selectedServer] if serverType == ServerType.CATALOG else order_servers[selectedServer]
+    global nextSelectedServer
+    nextSelectedServer = (nextSelectedServer+1) % len(order_servers)
+    print('the server ' + str(nextSelectedServer))
+    return catalog_servers[nextSelectedServer] if serverType == ServerType.CATALOG else order_servers[nextSelectedServer]
 
 # TODO: not implemented yet
 def checkCache(requestType: RequestType, data):
@@ -172,4 +169,4 @@ def checkCache(requestType: RequestType, data):
     return False
 
 if __name__ == '__main__':
-  app.run(debug = True, port = 2309, host='0.0.0.0')
+  app.run(debug = True, port = 2020, host='0.0.0.0')
