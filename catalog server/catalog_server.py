@@ -63,6 +63,8 @@ def update_cost(id):
 
     """
     book = Book.query.get(id)
+    headers = {'Content-type': 'application/json'}
+    json = None
     if book:
         if 'price' in request.json and isinstance(request.json['price'], numbers.Number):
             book.cost = request.json['price']
@@ -75,8 +77,8 @@ def update_cost(id):
             try:
                 response = requests.put(second_catalog_server + '/sync', headers = headers, json= json)
             except:
-                json["server_ip"] = second_catalog_server
-                # TODO: send request to the recovery server
+                json["server"] = second_catalog_server
+                response = requests.post(recovery_server + '/addBook', json= json, headers= headers)
             db.session.commit()
             return book_schema.jsonify(book), 200
 
