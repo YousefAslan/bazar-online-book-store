@@ -1,4 +1,3 @@
-from recovery_server.recovery_server import Orders
 from flask.globals import request
 import requests
 from server_configuration import *
@@ -55,10 +54,12 @@ def syncUpDateInfo():
     except:
         return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
 
-@catalog_server.before_first_request
+@order_server.before_first_request
 def checkAnyUpdates():
     try:
-        response = requests.get(recovery_server + '/getOrder/' + this_server)
+        headers = {'Content-type': 'application/json'}
+        json = {'server': this_server}
+        response = requests.get(recovery_server + '/getOrder',headers= headers, json= json)
         order = None
 
         for newOrders in response.json():
