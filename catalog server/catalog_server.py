@@ -198,7 +198,9 @@ def append():
 @catalog_server.before_first_request
 def checkAnyUpdates():
     try:
-        response = requests.get(recovery_server + '/getUpdates/' + this_server)
+        headers = {'Content-type': 'application/json'}
+        json = {'server': this_server}
+        response = requests.get(recovery_server + '/getUpdates',headers= headers, json= json)
         book = None
         for updatedBook in response.json():
             book = Book.query.get(updatedBook['id'])

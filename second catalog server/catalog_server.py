@@ -198,7 +198,9 @@ def append():
 @catalog_server.before_first_request
 def checkAnyUpdates():
     try:
-        response = requests.get(recovery_server + '/getUpdates/' + this_server)
+        headers = {'Content-type': 'application/json'}
+        json = {'server': this_server}
+        response = requests.get(recovery_server + '/getUpdates',headers= headers, json= json)
         book = None
         for updatedBook in response.json():
             book = Book.query.get(updatedBook['id'])
@@ -224,4 +226,4 @@ def method_not_allowed(e):
     return jsonify({'error': 405}), 405
 
 if __name__ == "__main__":
-    catalog_server.run(debug = True, port = 2030, host= '0.0.0.0')
+    catalog_server.run(debug = True, port = 2031, host= '0.0.0.0')
