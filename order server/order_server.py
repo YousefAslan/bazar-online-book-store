@@ -1,3 +1,4 @@
+from recovery_server.recovery_server import Orders
 from flask.globals import request
 import requests
 from server_configuration import *
@@ -53,6 +54,25 @@ def syncUpDateInfo():
         return order_schema.jsonify(order), 200
     except:
         return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
+
+@catalog_server.before_first_request
+def checkAnyUpdates():
+    try:
+        response = requests.get(recovery_server + '/getOrder/' + this_server)
+        order = None
+
+        for newOrders in response.json():
+            order = Orders.query.get(newOrders['order_id'])
+            if order:
+                order.order_id = newOrders['order_id']
+                order.book_id = newOrders['book_id']
+            else:
+                order = Orders(book_id= newOrders['book_id'], order_id= newOrders['order_id'])
+                db.session.add(order)
+            db.session.commit()
+    except:
+        print("apple")
+        pass
 
 @order_server.errorhandler(404)
 def resource_could_not_found(e):

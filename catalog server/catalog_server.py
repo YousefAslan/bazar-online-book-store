@@ -69,7 +69,7 @@ def update_cost(id):
         if 'price' in request.json and isinstance(request.json['price'], numbers.Number):
             book.cost = request.json['price']
             try:
-                response = requests.get(front_end_server + '/invalidate/' + str(id))
+                response = requests.delete(front_end_server + '/invalidate/' + str(id))
             except:
                 pass
             headers = {'Content-type': 'application/json'}
@@ -101,7 +101,7 @@ def update_item_number(id):
         if 'quantity' in request.json and isinstance(request.json['quantity'], numbers.Number):
             book.quantity = request.json['quantity']
             try:
-                response = requests.get(front_end_server + '/invalidate/' + str(id))
+                response = requests.delete(front_end_server + '/invalidate/' + str(id))
             except:
                 pass
             headers = {'Content-type': 'application/json'}
@@ -109,8 +109,8 @@ def update_item_number(id):
             try:
                 response = requests.put(second_catalog_server + '/sync', headers = headers, json= json)
             except:
-                json["server_ip"] = second_catalog_server
-                # TODO: send request to the recovery server
+                json["server"] = second_catalog_server
+                response = requests.post(recovery_server + '/addBook', json= json, headers= headers)
             db.session.commit()
             return  book_schema.jsonify(book), 200
         else:
@@ -133,7 +133,7 @@ def buy(id):
             book.quantity -= 1
             try:
                 # try to push invalidate notification to the front end server
-                response = requests.get(front_end_server + '/invalidate/' + str(id))
+                response = requests.delete(front_end_server + '/invalidate/' + str(id))
             except:
                 pass
             headers = {'Content-type': 'application/json'}
@@ -142,8 +142,8 @@ def buy(id):
                 # try to push update notification to the second catalog server 
                 response = requests.put(second_catalog_server + '/sync', headers = headers, json= json)
             except:
-                json["server_ip"] = second_catalog_server
-                # TODO: send request to the recovery server
+                json["server"] = second_catalog_server
+                response = requests.post(recovery_server + '/addBook', json= json, headers= headers)
             db.session.commit()
             return {}, 204
         else:
@@ -193,7 +193,27 @@ def append():
         return book_lookup_schema.jsonify(new_book), 201
     except:
         return {"message" : "cant add this book"}, 405
-    
+
+
+@catalog_server.before_first_request
+def checkAnyUpdates():
+    try:
+        response = requests.get(recovery_server + '/getUpdates/' + this_server)
+        book = None
+        for updatedBook in response.json():
+            book = Book.query.get(updatedBook['id'])
+            if book:
+                book.title = updatedBook['title']
+                book.quantity = updatedBook['quantity']
+                book.cost = updatedBook['cost']
+                book.topic = updatedBook['topic']
+                
+            else:
+                book = Book(id= updatedBook['id'],cost= updatedBook['cost'], quantity= updatedBook['quantity'], title= updatedBook['title'], topic= updatedBook['topic'])
+                db.session.add(book)
+            db.session.commit()
+    except:
+        pass
 
 @catalog_server.errorhandler(404)
 def resource_could_not_found(e):
