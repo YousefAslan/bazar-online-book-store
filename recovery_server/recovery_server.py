@@ -104,16 +104,18 @@ def addOrder():
     except:
         return {"message" : "cant add this order"}, 405   
 
-@recovery_server.route("/getOrder/<string:server>",methods=['GET'])
-def getOrder(server):
+@recovery_server.route("/getOrder",methods=['GET'])
+def getOrder():
+    server = request.json['server']
     orders = Orders.query.filter_by(server= server)
     toReturn = orders_schema.jsonify(orders.all())
     orders.delete()
     db.session.commit()
     return toReturn, 200
 
-@recovery_server.route("/getUpdates/<string:server>",methods=['GET'])
-def getUpdates(server):
+@recovery_server.route("/getUpdates",methods=['GET'])
+def getUpdates():
+    server = request.json['server']
     book = Book.query.filter_by(server= server)
     toReturn = books_schema.jsonify(book.all())
     book.delete()
@@ -122,6 +124,7 @@ def getUpdates(server):
 
 @recovery_server.errorhandler(404)
 def resource_could_not_found(e):
+    print("apple")
     return jsonify({'error': 404}), 404
 
 @recovery_server.errorhandler(405)
