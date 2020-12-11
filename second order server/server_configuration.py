@@ -4,9 +4,9 @@ from flask_marshmallow import Marshmallow
 import os
 
 front_end_server = "http://127.0.0.1:2020"
-this_server = "http://127.0.0.1:2040"
-catalog_server = "http://127.0.0.1:2030"
-second_order_server = "http://127.0.0.1:2041"
+this_server = "http://127.0.0.1:2041"
+catalog_server = "http://127.0.0.1:2031"
+second_order_server = "http://127.0.0.1:2040"
 recovery_server = "http://127.0.0.1:2050"
 
 #initi order server

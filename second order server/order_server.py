@@ -57,6 +57,7 @@ def syncUpDateInfo():
 @order_server.before_first_request
 def checkAnyUpdates():
     try:
+        # this_server
         headers = {'Content-type': 'application/json'}
         json = {'server': this_server}
         response = requests.get(recovery_server + '/getOrder',headers= headers, json= json)
@@ -84,4 +85,4 @@ def method_not_allowed(e):
     return jsonify({'errdor': 405}), 405
 
 if __name__ == "__main__":
-    order_server.run(debug = True, port = 2040, host= '0.0.0.0')
+    order_server.run(debug = True, port = 2041, host= '0.0.0.0')

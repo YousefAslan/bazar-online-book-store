@@ -23,8 +23,8 @@ class RequestType(Enum):
     BUY = 4
 
 front_end_server = "http://127.0.0.1:2020"
-this_server = "http://127.0.0.1:2030"
-second_catalog_server = "http://127.0.0.1:2031"
+this_server = "http://127.0.0.1:2031"
+second_catalog_server = "http://127.0.0.1:2030"
 recovery_server = "http://127.0.0.1:2050"
 
 # init flask calalog server which responce to handle the requests comming from the front-end and order-servers
