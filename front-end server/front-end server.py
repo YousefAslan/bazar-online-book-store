@@ -12,7 +12,6 @@ class ServerType(Enum):
     CATALOG = 2
     ORDER = 3
     
-
 class RequestType(Enum):
     """
     represent the server
@@ -22,10 +21,12 @@ class RequestType(Enum):
     UPDATE = 3
     BUY = 4
 
-
 catalog_servers = ["http://127.0.0.1:2030", "http://127.0.0.1:2031"]
 order_servers = ["http://127.0.0.1:2040", "http://127.0.0.1:2041"]
 nextSelectedServer = 0
+
+searchCache = []
+lookupCache = []
 
 app = Flask(__name__)
 
@@ -37,21 +38,22 @@ def search(topic):
     and await a response from the catalog to be responded on the end-user.
 
     """
-    # TODO: implement the cache
-    # cache miss ask the server
-    if not checkCache(RequestType.SEARCH ,topic) : 
+    # print(searchCache)
+    cache = checkCache(RequestType.SEARCH ,topic) 
+    if not cache: 
         for attempt in range(len(catalog_servers)):
             selectedServer = selectServer(ServerType.CATALOG)
             try:
                 responce = requests.get(selectedServer + '/search/' + topic)
-                # save to the cache
+                if responce.status_code == 200:
+                    searchCache.extend(responce.json())
                 return jsonify(responce.json()), responce.status_code
             except:
                 pass
         return {"message": " server is not ready to handle the request"}, 503
     else:
-        # return the cache value 
-        return {},500
+        # print(searchCache)
+        return jsonify(cache), 200
 
 
 @app.route('/lookup/<int:id>',methods = ['GET'])
@@ -62,19 +64,20 @@ def lookup(id):
     and response to the end-user
 
     """
-    if not checkCache(RequestType.LOOKUP ,id) : 
+    cache = checkCache(RequestType.LOOKUP ,id)
+    if not cache: 
         for attempt in range(len(catalog_servers)):
             selectedServer = selectServer(ServerType.CATALOG)
             try:
                 responce = requests.get(selectedServer + '/lookup/' + str(id))
-                # save to the cache
+                if responce.status_code == 200:
+                    lookupCache.append(responce.json())
                 return jsonify(responce.json()), responce.status_code
             except:
                 pass
         return {"message": " server is not ready to handle the request"}, 503
     else:
-        # return the cache value 
-        return {},500
+        return jsonify(cache[0]), 200
 
 @app.route("/update/price/<int:id>",methods=['PUT'])
 def update_price(id):
@@ -132,12 +135,14 @@ def buy(id):
             pass
     return {"message": " server is not ready to handle the request"}, 503
 
-# TODO: not implemented yet
 @app.route('/invalidate/<int:id>', methods = ['DELETE'])
 def invalidate(id):
     """
     invalidate request comes from any back-end server to invalidate item cached value
     """
+    global searchCache, lookupCache
+    searchCache = [ book for book in searchCache if book['id'] != id ]
+    lookupCache = [ book for book in lookupCache if book['id'] != id ]
     return {"message": "the item removed from the cache"}, 200
 
 @app.errorhandler(404)
@@ -161,12 +166,19 @@ def selectServer(serverType: ServerType):
     print('the server ' + str(nextSelectedServer))
     return catalog_servers[nextSelectedServer] if serverType == ServerType.CATALOG else order_servers[nextSelectedServer]
 
-# TODO: not implemented yet
 def checkCache(requestType: RequestType, data):
     """
     docstring
     """
-    return False
+    toReturn = None
+    # print(lookupCache)
+    if requestType == RequestType.SEARCH:
+        toReturn = [ book for book in searchCache if book["topic"] == data]
+    elif (requestType == RequestType.LOOKUP):
+        toReturn = [ book for book in lookupCache if book["id"] == data]
+    else:
+        pass
+    return toReturn if (toReturn != None and len(toReturn)) != 0 else False
 
 if __name__ == '__main__':
   app.run(debug = True, port = 2020, host='0.0.0.0')
