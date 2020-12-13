@@ -69,7 +69,7 @@ def update_cost(id):
         if 'price' in request.json and isinstance(request.json['price'], numbers.Number):
             book.cost = request.json['price']
             try:
-                response = requests.delete(front_end_server + '/invalidate/' + str(id))
+                response = requests.delete(front_end_server + '/invalidate/' + str(id), timeout= (0.015,0.5))
             except:
                 pass
             headers = {'Content-type': 'application/json'}
@@ -101,7 +101,7 @@ def update_item_number(id):
         if 'quantity' in request.json and isinstance(request.json['quantity'], numbers.Number):
             book.quantity = request.json['quantity']
             try:
-                response = requests.delete(front_end_server + '/invalidate/' + str(id))
+                response = requests.delete(front_end_server + '/invalidate/' + str(id), timeout= (0.015,0.5))
             except:
                 pass
             headers = {'Content-type': 'application/json'}
@@ -133,7 +133,7 @@ def buy(id):
             book.quantity -= 1
             try:
                 # try to push invalidate notification to the front end server
-                response = requests.delete(front_end_server + '/invalidate/' + str(id))
+                response = requests.delete(front_end_server + '/invalidate/' + str(id), timeout= (0.015,0.5))
             except:
                 pass
             headers = {'Content-type': 'application/json'}

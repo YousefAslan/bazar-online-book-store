@@ -44,7 +44,7 @@ def search(topic):
         for attempt in range(len(catalog_servers)):
             selectedServer = selectServer(ServerType.CATALOG)
             try:
-                responce = requests.get(selectedServer + '/search/' + topic)
+                responce = requests.get(selectedServer + '/search/' + topic, timeout= (0.015,0.5))
                 if responce.status_code == 200:
                     searchCache.extend(responce.json())
                 return jsonify(responce.json()), responce.status_code
@@ -69,7 +69,7 @@ def lookup(id):
         for attempt in range(len(catalog_servers)):
             selectedServer = selectServer(ServerType.CATALOG)
             try:
-                responce = requests.get(selectedServer + '/lookup/' + str(id))
+                responce = requests.get(selectedServer + '/lookup/' + str(id), timeout= (0.015,0.5))
                 if responce.status_code == 200:
                     lookupCache.append(responce.json())
                 return jsonify(responce.json()), responce.status_code
@@ -92,7 +92,7 @@ def update_price(id):
     for attempt in range(len(catalog_servers)):
         selectedServer = selectServer(ServerType.CATALOG)
         try:
-            responce = requests.put(selectedServer + '/update/price/' + str(id), json = jsons, headers = headers)
+            responce = requests.put(selectedServer + '/update/price/' + str(id), json = jsons, headers = headers, timeout= (0.015,0.5))
             return jsonify(responce.json()), responce.status_code
         except:
             pass
@@ -110,7 +110,7 @@ def update_item_number(id):
     for attempt in range(len(catalog_servers)):
         selectedServer = selectServer(ServerType.CATALOG)
         try:
-            responce = requests.put(selectedServer + '/update/item/' + str(id), json = jsons, headers = headers)
+            responce = requests.put(selectedServer + '/update/item/' + str(id), json = jsons, headers = headers, timeout= (0.015,0.5))
             return jsonify(responce.json()), responce.status_code
         except:
             pass
@@ -129,7 +129,7 @@ def buy(id):
     for attempt in range(len(catalog_servers)):
         selectedServer = selectServer(ServerType.ORDER)
         try:
-            responce = requests.put(selectedServer + '/buy/' + str(id))
+            responce = requests.put(selectedServer + '/buy/' + str(id), timeout= (0.015,0.5))
             return jsonify(responce.json()), responce.status_code
         except:
             pass
