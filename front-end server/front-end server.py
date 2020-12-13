@@ -21,8 +21,8 @@ class RequestType(Enum):
     UPDATE = 3
     BUY = 4
 
-catalog_servers = ["http://127.0.0.1:2030", "http://127.0.0.1:2031"]
-order_servers = ["http://127.0.0.1:2040", "http://127.0.0.1:2041"]
+catalog_servers = ["http://192.168.1.20:2030", "http://192.168.1.21:2031"]
+order_servers = ["http://192.168.1.30:2040", "http://192.168.1.31:2041"]
 nextSelectedServer = 0
 
 searchCache = []
