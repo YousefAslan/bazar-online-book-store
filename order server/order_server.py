@@ -9,11 +9,11 @@ def buy(id):
     """
     try:
         # ensure that the book is in stocks vias send requiest to the catalog server
-        responce = requests.get(catalog_server + '/verify_item_in_stock/' + str(id), timeout= (0.015,0.2))
+        responce = requests.get(catalog_server + '/verify_item_in_stock/' + str(id), timeout= (0.3,2))
         #  if status code 200 and which means there is books at the stock
         # to completed the purchase order send buy request for the catalog server
         if  responce.status_code == 200 and responce.json()['quantity'] > 0:
-            responce = requests.put(catalog_server + '/buy/' + str(id),timeout= (0.015,0.15))
+            responce = requests.put(catalog_server + '/buy/' + str(id),timeout= (0.3,3))
             if responce.status_code == 204:
                 orders = Orders(id)
                 db.session.add(orders)
@@ -21,12 +21,12 @@ def buy(id):
                 headers = {'Content-type': 'application/json'}
                 json = order_schema.dump(orders)
                 try:
-                    responce = requests.put(second_order_server + '/sync',json= json, headers= headers, timeout= (0.015,0.5))
+                    responce = requests.put(second_order_server + '/sync',json= json, headers= headers, timeout= (0.3,2))
                     if responce.status_code != 200:
                         return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
                 except:
                     json["server"] = second_order_server                
-                    response = requests.post(recovery_server + '/addOrder', json= json, headers= headers, timeout= (0.015,0.5))
+                    response = requests.post(recovery_server + '/addOrder', json= json, headers= headers, timeout= (0.3,2))
 
                 return order_schema.jsonify(orders), 201
             else:
@@ -59,7 +59,7 @@ def checkAnyUpdates():
     try:
         headers = {'Content-type': 'application/json'}
         json = {'server': this_server}
-        response = requests.get(recovery_server + '/getOrder',headers= headers, json= json, timeout= (0.015,2))
+        response = requests.get(recovery_server + '/getOrder',headers= headers, json= json, timeout= (0.3,5))
         order = None
 
         for newOrders in response.json():

@@ -69,7 +69,7 @@ def update_cost(id):
         if 'price' in request.json and isinstance(request.json['price'], numbers.Number):
             book.cost = request.json['price']
             try:
-                response = requests.delete(front_end_server + '/invalidate/' + str(id), timeout= (0.015,0.5))
+                response = requests.delete(front_end_server + '/invalidate/' + str(id), timeout= (0.3,2))
             except:
                 pass
             headers = {'Content-type': 'application/json'}
@@ -101,7 +101,7 @@ def update_item_number(id):
         if 'quantity' in request.json and isinstance(request.json['quantity'], numbers.Number):
             book.quantity = request.json['quantity']
             try:
-                response = requests.delete(front_end_server + '/invalidate/' + str(id), timeout= (0.015,0.5))
+                response = requests.delete(front_end_server + '/invalidate/' + str(id), timeout= (0.3,2))
             except:
                 pass
             headers = {'Content-type': 'application/json'}
@@ -133,17 +133,17 @@ def buy(id):
             book.quantity -= 1
             try:
                 # try to push invalidate notification to the front end server
-                response = requests.delete(front_end_server + '/invalidate/' + str(id), timeout= (0.015,0.5))
+                response = requests.delete(front_end_server + '/invalidate/' + str(id), timeout= (0.3,2))
             except:
                 pass
             headers = {'Content-type': 'application/json'}
             json = book_schema.dump(book)
             try:
                 # try to push update notification to the second catalog server 
-                response = requests.put(second_catalog_server + '/sync', headers = headers, json= json)
+                response = requests.put(second_catalog_server + '/sync', headers = headers, json= json, timeout= (0.3,2))
             except:
                 json["server"] = second_catalog_server
-                response = requests.post(recovery_server + '/addBook', json= json, headers= headers)
+                response = requests.post(recovery_server + '/addBook', json= json, headers= headers, timeout= (0.3,5))
             db.session.commit()
             return {}, 204
         else:
@@ -200,7 +200,7 @@ def checkAnyUpdates():
     try:
         headers = {'Content-type': 'application/json'}
         json = {'server': this_server}
-        response = requests.get(recovery_server + '/getUpdates',headers= headers, json= json)
+        response = requests.get(recovery_server + '/getUpdates',headers= headers, json= json, timeout= (0.3,5))
         book = None
         for updatedBook in response.json():
             book = Book.query.get(updatedBook['id'])
@@ -209,7 +209,6 @@ def checkAnyUpdates():
                 book.quantity = updatedBook['quantity']
                 book.cost = updatedBook['cost']
                 book.topic = updatedBook['topic']
-                
             else:
                 book = Book(id= updatedBook['id'],cost= updatedBook['cost'], quantity= updatedBook['quantity'], title= updatedBook['title'], topic= updatedBook['topic'])
                 db.session.add(book)
