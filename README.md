@@ -1,66 +1,119 @@
-# bazar-online-book-store
+# Bazar
 
-## About bazar. com
+Bazar, it's a simple store based on a multi-tier architecture implemented using microservices, making it divided into two main parts: front-end side and back-end side. Bazar project aims to apply a set of basic concepts in distributed systems of replication, consistency, and caching.
 
-bazar . com is one of a distributed operating system course project.
-bazar online book store. It is a microservices builds based on the RAST API using Flask as it is online book store, and contains only four books:
-|book title |topic |
-|----------------|-----------------------------|
-|How to get a good grade in DOS in 20 minutes a day| distributed systems  
-|RPCs for Dummies| distributed systems  
-|Xen and the Art of Surviving Graduate School| graduate school
-|Cooking for the Impatient Graduate Student| graduate school
+# Architecture
 
-The project is divided into three main servers:
+Bazar relies on microservices in its construction, as it is divided into several parts, each part aims to perform a specific function, and these parts collaborate to perform the required tasks.
 
-- front-end server which receive all the request form the user and propagate it back-end servers
-- catalog server which consider as one of the back-end server
-- order server and its the second back-end server
+The microservices that are primarily Bazar are front-end servers and back-end servers.
+The front-end is responsible for providing services to the end-users. It also contains a cache of information about books in Bazar and is responsible for load balancing of requests on back-end microservices. The back-end is divided into many microservices. There are Catalog microservices are responsible for displaying, storing, and updating information books in Bazar. In addition to Order microservices are responsible for providing selling services to customers. These servers communicate with each other to ensure consistency between them, and in the event that there is a defect in one of them, the recovery server is found to store modifications until the other servers return to work.
 
-## Installation
+The following photo illustrates Bazar's architecture composed of front-end, Catalog, Order, and recovery microservices.
+![Image](./AttachedFiles/bazarArch.png)
 
-This repository is consist of three main files, each of which represents one of the three servers.
-The order server and catalog server files both contain a python scripts called server_configuration.py through which you can change the IP and the ports number of the servers; Where front-end server contains this information inside the front-end server.py file, both servers are running on localhost. If you want to change the environment to works on a different machine, just modify these files to suit the new environment.
-After that make sure pip3 is installed if not apply the following command on the terminal
+Bazar built microservices using **Flask** a micro web framework written in **Python**. Flask provides easy, simple, and fast **RESTful API** building. **SQLite** Database was also used to store books, their details, and Orders. And in dealing with databases with an object-relational mapper **SQL Alchemy**, and **Marshmallow** was used.
+
+# Installation
+
+Bazar is currently distributed into six microservices, each one found in a separate folder. Each of these folders, except front-end and recovery, contains a server_configuration.py file that contains the URL of the other servers. to run them you must modify them to suit your machine's environment. After modifying them, the following steps should be followed:
+
+- install Python and pip:
 
 ```
+$ sudo apt install python3
 $ sudo apt install python3-pip
 ```
 
-After that, if all three server run at the same machine open the terminal from bazar-online-book-store directory then apply the following commands:
+- for each server ensure the requirements python libraries was installed
 
 ```
 $ pip3 install -r requirements.txt
 ```
 
-if the three servers run at different machines open the terminal from each machine on the server directory according to its name and apply the following installation command:
+- Finally, you can run servers using the following comands:
 
 ```
-$ pip3 install -r requirements.txt
+$ python3 '.\front-end server\front-end server.py'
+$ python3 '.\catalog server\server_configuration.py'
+$ python3 '.\order server\order_server.py'
+$ python3 '.\second catalog server\catalog_server.py'
+$ python3 '.\second order server\order_server.py'
+$ python3 .\recovery_server\recovery_server.py
 ```
 
-finally to run the three servers open the terminal from ther directoreis and apply the following commands:
+# Microservices
 
-```
-$ python3 '<server name.py>'
-```
+## Front-End
 
-## about the servrs
+The front-end is responsible for receiving requests from the end-user and directing them to their responsible servers, And because there is more than one server performing the same tasks, the front-end worked to distribute the tasks between them so that the work balance between them as much as possible. As the front-end distributes the incoming tasks on the servers one by one sequentially, and if it finds one of the servers down, it tries to send it to another server that performs the same functionality. Moreover, the front-end contains a cache cached incoming response that comes from the catalog servers.
 
-### front-end server
+### The API
 
-A front-end server is a server that receives data from the end-user and sends it to each of the back-end servers. This server works under microservices known as **Flask**, which is one of the simplest and most popular microservices that are written using the python.
-Flask connects each route with a method, so when a request arrives at this URL, the method linked with it is called to be executed and then the client is responded. All requests that reach a front-end server are sent to another server using a package called **request**, which sends an http request to another server.
+The front-end server offers many requests that may be received via the end-user or through back-end servers. RESTfull API was adopted in its construction as in the rest of Bazar, and the following table shows the request that reaches the front-end
+| Operation | Method | Route | Body request | Response | Sender (end-user/ back-end) |
+|-----------------|--------|------------------------|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------|
+| search | GET | /search/<string:topic> | `empty` | `200`, return an array under this topic each element contents book id and title, otherwise `404` when no book under this topic | end-user |
+| lookup | GET | /lookup/<int:id> | `empty` | `200` if the book exist return more information about the book (title, quantity, and cost) otherwise it return `404` indicates that there is no book with this id | end-user |
+| update price | PUT | /update/price/<int:id> | `{ "price" : 900 }` | `200` if the changes happened correctly and the price updated, 400 if the request bad and cant handle it, or `404` if there is no book with this id | end-user |
+| update quantity | PUT | /update/item/<int:id> | `{ "quantity" : 900 }` | `200` if the changes happened correctly and the quantity updated, `400` if the request bad and cant handle it, or `404` if there is no book with this id | end-user |
+| buy | PUT | /buy/<int:id> | `empty` | `201` if the purchase process done and stored inside the order database, otherwise it will return `404` to indicate that the book out of stock or does not exist | end-user |
+| invalidate | DELETE | /invalidate/<int:id> | `empty` | `200` when the item removed from the cache | back-end |
 
-### catalog server and order server
+## Catlaog
 
-Both order and catalog servers work in the same way as the font-end server, as it is based on **Flask** microservices and the order server uses **request** to communicate with the catalog server.
-What distinguishes each of these two servers is that they contain a database, as they store data in a simple database known as **SQLite**, and communication with the data base in a simple way without the need to write a complex queries **SQL Alchemy** and **Marshmallow** was used to interact with the database via object relational mapper.
-The order server stores all purchases, while the catalog server storing books and their information from quantity, title, topic, and price.
+The goal of the catalog microservices is to store and display the book's information in Bazar using the RESTful API. Books and their information are stored in the SQLite database. Requests arrive from either the front-end or the order. And it responds directly to them with reading events after making sure that the stored data did not have any amendments on it. on the other hand, when modification happened, the catalog tries to communicate with the rest of the catalogs to inform them. If the communication with one of the servers fails, the catalog communicates with the recovery server to store the update, and whoever did not receive the update.
 
-Bazar works fine without any problems, but it may need some improvements to increase security and provide authentication, as it is possible to the the end-user at this moment communicates with the back-end servers directly without verifying the person's identity. Also, bazar servers support a certain number of users, which may cause problems during peak periods, so it is preferable to use more back-end servers that can better distribute the load on them and ensure speedy performance.
+### API
 
-## The API
+| operation               | method | route                  | request body                                                                    | response                                                                                                                                                                                                                                                            | sender server   |
+| ----------------------- | ------ | ---------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| search                  | GET    | /search/               | `empty`                                                                         | `200`, return an array under this topic each element contents book id and title, otherwise `410`when no book under this tpoic                                                                                                                                       | front-end       |
+| lookup                  | GET    | /lookup/               | `empty`                                                                         | `200` if the book exist return more information about the book (title, quantity, and cost) otherwise it return `404` indicates that there is no book with this id                                                                                                   | front-end       |
+| update price            | PUT    | /update/price/         | `{ "price" : 900 }`                                                             | `200` if the changes happened correctly and the price updated, `400` if the request bad and cant handle it, or `404` if there is no book with this id                                                                                                               | front-end       |
+| update quantity         | PUT    | /update/item/          | `{ "quantity" : 900 }`                                                          | `200` if the changes happened correctly and the quantity updated, `400` if the request bad and cant handle it, or `404` if there is no book with this id                                                                                                            | front-end       |
+| check the book quantity | GET    | /verify_item_in_stock/ | `empty`                                                                         | `200` if book the book available and its return book id and quantity, `410` if this book is being sold in this store but is not available right now out, `404` if this book is not being sold here                                                                  | order           |
+| buy                     | PUT    | /buy/                  | `empty`                                                                         | `204` if the purchase process done at the catalog side and the catalog database updated, `410` if this book is being sold in this store but is not available right now out, otherwise it will return `404` to indicate that the book out of stock or does not exist | order           |
+| sync                    | PUT    | /sync                  | `{ "id": 1, "title": "spring", "quantity": 12, "cost": 10, "topic": "spring" }` | `200` if the catalog database updated, otherwise if the server can not handle it `400` will returned                                                                                                                                                                | another catalog |
+|                         |        |                        |                                                                                 |                                                                                                                                                                                                                                                                     |                 |
+
+## Order
+
+The purpose of order microservices is to complete the purchase process and store it in its database. The order communicates with the catalog to verify that there are sufficient quantities of the book to complete the purchase and communicates with other order servers to ensure consistency between them. In cases of failure of one of them, it stores the data on the recovery server as the catalog server does. Also, when the order server returns to work it communicate with the recovery server it guarantees consistency.
+
+### API
+
+Requests to order arrive either from the front-end or another order server to achieve consistancy. The following two tables list the requests arriving to the order server.
+
+#### Buy Request
+
+| route         | status code | message body                                                           | description                                                                                            |
+| ------------- | ----------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| /buy/<int:id> | 201         | return json object contanes the order id and the book id               | The purchase was successfully completed and stored in the database                                     |
+| /buy/<int:id> | 410         | return a message says: "This book is currently unavailable"            | the book out of stock                                                                                  |
+| /buy/<int:id> | 530         | return a message says: "The server is not ready to handle the request" | due to an error of the connection between two back-end servers the order server cant handle th request |
+
+#### Sync Request
+
+| Route | Method | Status Code | Description                                                                           |
+| ----- | ------ | ----------- | ------------------------------------------------------------------------------------- |
+| /sync | PUT    | `200`       | the order server handle the request                                                   |
+| /sync | PUT    | `400`       | the server cannot process the request due to something perceived to be a client error |
+
+## Recovery
+
+The recovery server aims to store the updates that occur on the data if one of the servers fails, and it saves this data until the server returns to work and requests it from it.
+
+### API
+
+the following table illustrates the recovery server API:
+
+| operation        | method | route       | response                                                            | sender server |
+| ---------------- | ------ | ----------- | ------------------------------------------------------------------- | ------------- |
+| Add book update  | POST   | /addBook    | `201`, when the book updates store to the database, otherwise `405` | front-end     |
+| Add order        | POST   | /addOrder   | `201`, when the order store to the database, otherwise `405`        | front-end     |
+| Get books update | GET    | /getUpdates | `200` and the body content books                                    | front-end     |
+| Get orders       | GET    | /getOrder   | `200` and the body content orders                                   | front-end     |
 
 Bazar is divided into two main parts, which are the front-end server and back-end servers.
 
@@ -69,32 +122,10 @@ Bazar is divided into two main parts, which are the front-end server and back-en
 The fron-end server handles the process of communicating with the end-user, as the user sends the request directly to it and it sends it to the back-end servers according to the nature of the request.
 
 The following table shows all the operations provided by the REST API for this server:
-| operation | method | route | request body | response | description |
-|-----------------|--------|------------------------|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
-| search | GET | /search/<string:topic> | `empty` | `200`, return an array under this topic each element contents book id and title, otherwise `404` when no book under this tpoic | get all books under this topic |
-| lookup | GET | /lookup/<int:id> | `empty` | `200` if the book exist return more information about the book (title, quantity, and cost) otherwise it return `404` indicates that there is no book with this id | get more information about the book |
-| update price | PUT | /update/price/<int:id> | `{ "price" : 900 }` | `200` if the changes happened correctly and the price updated, `400` if the request bad and cant handle it, or `404` if there is no book with this id | update the price of this book |
-| update quantity | PUT | /update/item/<int:id> | `{ "quantity" : 900 } ` | `200` if the changes happened correctly and the quantity updated, `400` if the request bad and cant handle it, or `404` if there is no book with this id | update the book quantity |
-| buy | PUT | /buy/<int:id> | `empty` | `201` if the purchase process done and stored inside the order database, otherwise it will return `404` to indicate that the book out of stock or does not exist | apply a buy order from a specific book using its id |
-
-At the moment the aim of the fron-end server is to send the request to responsible servers to serve it; These requests are distributed on the catalog-server as it receives search, lookup, update price, and update quantity from the fron-end and the order server receives purchase requests from it.
-
-### back-end server
-
-The tasks in the back-end servers distribution into two parts, where the order server is responsible for the purchase process, and the catalog server displays the information of the existing books on stocks.
 
 #### catalog server:
 
 The catalog server requests arrive from the front-end server and the order server, as it is responsible for many tasks from searching and obtaining boks information, updating the book information from the available quantity and price, checking the available quantities of the book. As shown in the following table, all these operations are provided by the server through these REST APIs:
-
-| operation               | method | route                          | request body           | response                                                                                                                                                                                                                                                            | description                                                | sender server |
-| ----------------------- | ------ | ------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------- |
-| search                  | GET    | /search/<string:topic>         | `empty`                | `200`, return an array under this topic each element contents book id and title, otherwise `410`when no book under this tpoic                                                                                                                                       | get all books under this topic                             | front-end     |
-| lookup                  | GET    | /lookup/<int:id>               | `empty`                | `200` if the book exist return more information about the book (title, quantity, and cost) otherwise it return `404` indicates that there is no book with this id                                                                                                   | get more information about the book                        | front-end     |
-| update price            | PUT    | /update/price/<int:id>         | `{ "price" : 900 }`    | `200` if the changes happened correctly and the price updated, `400` if the request bad and cant handle it, or `404` if there is no book with this id                                                                                                               | update the price of this book                              | front-end     |
-| update quantity         | PUT    | /update/item/<int:id>          | `{ "quantity" : 900 }` | `200` if the changes happened correctly and the quantity updated, `400` if the request bad and cant handle it, or `404` if there is no book with this id                                                                                                            | update the book quantity                                   | front-end     |
-| check the book quantity | GET    | /verify_item_in_stock/<int:id> | `empty`                | `200` if book the book available and its return book id and quantity, `410` if this book is being sold in this store but is not available right now out, `404` if this book is not being sold here                                                                  | check if the book available before apply the buy operation | order         |
-| buy                     | PUT    | /buy/<int:id>                  | `empty`                | `204` if the purchase process done at the catalog side and the catalog database updated, `410` if this book is being sold in this store but is not available right now out, otherwise it will return `404` to indicate that the book out of stock or does not exist | apply a buy order from a specific book using its id        | order         |
 
 ### order server:
 
