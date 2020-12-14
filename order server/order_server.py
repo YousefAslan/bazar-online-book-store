@@ -2,18 +2,21 @@ from flask.globals import request
 import requests
 from server_configuration import *
 
-@order_server.route("/buy/<int:id>",methods=['PUT'])    
+
+@order_server.route("/buy/<int:id>", methods=['PUT'])
 def buy(id):
     """
     this method response to handle the buy request comes from the fron-end server to be completed the purchase order
     """
     try:
         # ensure that the book is in stocks vias send requiest to the catalog server
-        responce = requests.get(catalog_server + '/verify_item_in_stock/' + str(id), timeout= (0.3,2))
+        responce = requests.get(
+            catalog_server + '/verify_item_in_stock/' + str(id), timeout=(0.3, 2))
         #  if status code 200 and which means there is books at the stock
         # to completed the purchase order send buy request for the catalog server
-        if  responce.status_code == 200 and responce.json()['quantity'] > 0:
-            responce = requests.put(catalog_server + '/buy/' + str(id),timeout= (0.3,3))
+        if responce.status_code == 200 and responce.json()['quantity'] > 0:
+            responce = requests.put(
+                catalog_server + '/buy/' + str(id), timeout=(0.3, 3))
             if responce.status_code == 204:
                 orders = Orders(id)
                 db.session.add(orders)
@@ -21,12 +24,14 @@ def buy(id):
                 headers = {'Content-type': 'application/json'}
                 json = order_schema.dump(orders)
                 try:
-                    responce = requests.put(second_order_server + '/sync',json= json, headers= headers, timeout= (0.3,2))
+                    responce = requests.put(
+                        second_order_server + '/sync', json=json, headers=headers, timeout=(0.3, 2))
                     if responce.status_code != 200:
-                        return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
+                        return {"message": " the server cannot or will not process the request due to something perceived to be a client error"}, 400
                 except:
-                    json["server"] = second_order_server                
-                    response = requests.post(recovery_server + '/addOrder', json= json, headers= headers, timeout= (0.3,2))
+                    json["server"] = second_order_server
+                    response = requests.post(
+                        recovery_server + '/addOrder', json=json, headers=headers, timeout=(0.3, 2))
 
                 return order_schema.jsonify(orders), 201
             else:
@@ -39,7 +44,7 @@ def buy(id):
         return {"message": "The server is not ready to handle the request"}, 503
 
 
-@order_server.route("/sync",methods=['PUT'])  
+@order_server.route("/sync", methods=['PUT'])
 def syncUpDateInfo():
     """
     handle the sync between order servers
@@ -52,36 +57,40 @@ def syncUpDateInfo():
         db.session.commit()
         return order_schema.jsonify(order), 200
     except:
-        return {"message" : " the server cannot or will not process the request due to something perceived to be a client error"}, 400
+        return {"message": " the server cannot or will not process the request due to something perceived to be a client error"}, 400
+
 
 @order_server.before_first_request
 def checkAnyUpdates():
     try:
         headers = {'Content-type': 'application/json'}
         json = {'server': this_server}
-        response = requests.get(recovery_server + '/getOrder',headers= headers, json= json, timeout= (0.3,5))
+        response = requests.get(
+            recovery_server + '/getOrder', headers=headers, json=json, timeout=(0.3, 5))
         order = None
 
         for newOrders in response.json():
             order = Orders.query.get(newOrders['order_id'])
             if order:
                 order.order_id = newOrders['order_id']
-                order.book_id = newOrders['book_id']
             else:
-                order = Orders(book_id= newOrders['book_id'], order_id= newOrders['order_id'])
+                order = Orders(newOrders['book_id'])
                 db.session.add(order)
             db.session.commit()
     except:
         print("apple")
         pass
 
+
 @order_server.errorhandler(404)
 def resource_could_not_found(e):
     return jsonify({'error': 404}), 404
+
 
 @order_server.errorhandler(405)
 def method_not_allowed(e):
     return jsonify({'errdor': 405}), 405
 
+
 if __name__ == "__main__":
-    order_server.run(debug = True, port = 2040, host= '0.0.0.0')
+    order_server.run(debug=True, port=2040, host='0.0.0.0')
