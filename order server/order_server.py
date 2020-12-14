@@ -71,9 +71,7 @@ def checkAnyUpdates():
 
         for newOrders in response.json():
             order = Orders.query.get(newOrders['order_id'])
-            if order:
-                order.order_id = newOrders['order_id']
-            else:
+            if not order:
                 order = Orders(newOrders['book_id'])
                 db.session.add(order)
             db.session.commit()
