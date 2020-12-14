@@ -115,36 +115,57 @@ the following table illustrates the recovery server API:
 | Get books update | GET    | /getUpdates | `200` and the body content books                                    | front-end     |
 | Get orders       | GET    | /getOrder   | `200` and the body content orders                                   | front-end     |
 
-Bazar is divided into two main parts, which are the front-end server and back-end servers.
+# Performance
 
-### front-end server
+Operations in Bazar can be divided into three main types: get information, update, and buy. Each of them varies on the time taken to get a response. In the following, the performance will be compared for each of these operations in the case of the cache is working or not, and the replica fails or working fine.
 
-The fron-end server handles the process of communicating with the end-user, as the user sends the request directly to it and it sends it to the back-end servers according to the nature of the request.
+## Get infromation
 
-The following table shows all the operations provided by the REST API for this server:
+there is two type of geting information, search and lookup. Both of them showed average response time close to each other in the four cases. The following table shows average response time in millisecond.
 
-#### catalog server:
+| Operation | cache and replica | replica and no cache | cache and no replica | no cache and no replica |
+| --------- | ----------------- | -------------------- | -------------------- | ----------------------- |
+| Search    | 9.9               | 17.1                 | 11.2                 | 16.2                    |
+| Lookup    | 12.8              | 16.8                 | 9.4                  | 18                      |
 
-The catalog server requests arrive from the front-end server and the order server, as it is responsible for many tasks from searching and obtaining boks information, updating the book information from the available quantity and price, checking the available quantities of the book. As shown in the following table, all these operations are provided by the server through these REST APIs:
+The effect of cache on response time is shown as the average time decreased by 42.1% in the search operation and 23.8% in the lookup operation. The following pictures show the responce time for each request.
+| ![Image](./AttachedFiles/search.png) | ![Image](./AttachedFiles/lookup.png) |
+|---|---|
 
-### order server:
+## Update
 
-The oder server continues the purchases that reach the front-end server, where the request arrives, it divides it into two parts. The first is to verify the existence of book and its quantity by communicating with the catalog server and after verifying its presence, it sends the second part to the server to reduce the number of available books, and in the event was successfully process , it stores this purchases with it is database
+The update operation is divided into two operations, quantity or price update of the books in Bazar. In the next table, the response rate for the two processes is shown if a replica is working or failing. As it demonstrates an increase in the response time compared to search or lookup operations. The reason that the catalog server sends an invalidation message to the front-end to remove the book from the cache. Moreover, that Bazar maintains consistency by sending these modifications to the rest of the replicas, and if communication with them fails, it sends these changes to a recovery point so that the catalog server will restore them when it returns for work.
 
-In the table clarify the cases in which the order server may respond:
-| route | status code | message body | description |
-| ------------- | ----------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| /buy/<int:id> | 201 | return json object contanes the order id and the book id | The purchase was successfully completed and stored in the database |
-| /buy/<int:id> | 410 | return a message says: "This book is currently unavailable" | the book out of stock |
-| /buy/<int:id> | 530 | return a message says: "The server is not ready to handle the request" | due to an error of the connection between two back-end servers the order server cant handle th request |
+| Operation       | Replica work | Replica down |
+| --------------- | ------------ | ------------ |
+| Update price    | 46.7         | 49.6         |
+| Update quantity | 46.8         | 61.1         |
 
-## RESTful APIs output and the communication between them
+The following pictures show the responce time for each request
 
-### front-end server:
+The following pictures show the responce time for each request
+| ![Image](./AttachedFiles/UpdatePrice.png) | ![Image](./AttachedFiles/UpdateQuantity.png) |
+|---|---|
 
-- The output of the search process
+## Buy
 
-  - there are books on this topic:
+The buying process is the most time-consuming in Bazar, reason is that the order server connects to the catalog server to verify the existence of a book and complete the update of the database, then complete the purchase process after communicating with the rest of the order servers. Which makes it the longest response time, as shown in the following table and image.
+
+| Operation | Replica work | Replica down |
+| --------- | ------------ | ------------ |
+| Buy       | 84.1         | 93.6         |
+
+![Image](./AttachedFiles/Buy.png)
+
+In the three basic operations, a high response time appears in the first request, due to the cold start, as the server checks the validity of the data in the database when the first request reaches the server.
+
+# RESTful Output
+
+## front-end server:
+
+- Search Output
+
+  - there is books under this topic:
 
     request: `GET http://fron-end server/search/distributed systems`
 
@@ -155,17 +176,24 @@ In the table clarify the cases in which the order server may respond:
     ```
     [
         {
+            "cost": 854.0,
             "id": 1,
-            "title": "How to get a good grade in DOS in 20 minutes a day"
+            "quantity": 175770,
+            "title": "How to get a good grade in DOS in 20 minutes a day",
+            "topic": "distributed systems"
         },
         {
+            "cost": 326.0,
             "id": 2,
-            "title": "RPCs for Dummies"
+            "quantity": 121,
+            "title": "RPCs for Dummies",
+            "topic": "distributed systems"
         }
     ]
+
     ```
 
-  - there are no books on this topic:
+  - No books under this topic:
 
     request: `GET http://fron-end server/search/network`
 
@@ -175,13 +203,13 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "message": "There are no books under this topic"
+        "message": "There are no books under this topic"
     }
     ```
 
-- The output of the lookup process
+- Lookup output
 
-  - there are book with this ID:
+  - there is book with this ID:
 
     request: `GET http://fron-end server/lookup/1`
 
@@ -191,13 +219,15 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "cost": 50.0,
-    "quantity": 900,
-    "title": "How to get a good grade in DOS in 20 minutes a day"
+        "cost": 854.0,
+        "id": 1,
+        "quantity": 175770,
+        "title": "How to get a good grade in DOS in 20 minutes a day",
+        "topic": "distributed systems"
     }
     ```
 
-  - there is no book with this ID:
+  - No book with this ID:
 
     request: `GET http://fron-end server/lookup/90`
 
@@ -207,13 +237,13 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "message": "There is no book with this ID"
+        "message": "There is no book with this ID"
     }
     ```
 
-- The output of the update price process
+- Update price output
 
-  - there are book with this ID:
+  - there is a book with this ID:
 
     request: `PUT http://fron-end server/price/1`
 
@@ -221,7 +251,7 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "price" : 900
+        "price" : 900
     }
     ```
 
@@ -231,13 +261,15 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "cost": 900.0,
-    "quantity": 900,
-    "title": "How to get a good grade in DOS in 20 minutes a day"
+        "cost": 900.0,
+        "id": 1,
+        "quantity": 175770,
+        "title": "How to get a good grade in DOS in 20 minutes a day",
+        "topic": "distributed systems"
     }
     ```
 
-  - there is book with this ID but there is a problem with request body :
+  - bad body request :
 
     request: `PUT http://fron-end server/update/price/1`
 
@@ -245,7 +277,7 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "gool" : 900
+        "gool" : 900
     }
     ```
 
@@ -267,7 +299,7 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "price" : 900
+        "price" : 900
     }
     ```
 
@@ -277,37 +309,13 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "message": "There is no book with this ID"
+        "message": "There is no book with this ID"
     }
     ```
 
-- The output of the update quantity process
+- Update quantity output
 
-  - there are book with this ID:
-
-        request: `PUT http://fron-end server/update/item/1`
-
-        request body:
-
-        ```
-        {
-        "quantity" : 600
-        }
-        ````
-
-        response status: `200 ok`
-
-        response body:
-
-        ```
-        {
-            "cost": 900.0,
-            "quantity": 600,
-            "title": "How to get a good grade in DOS in 20 minutes a day"
-        }
-        ```
-
-  - there is book with this ID but there is a problem with request body :
+  - there is book with this ID:
 
     request: `PUT http://fron-end server/update/item/1`
 
@@ -315,7 +323,33 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "gool" : 900
+        "quantity" : 600
+    }
+    ```
+
+    response status: `200 ok`
+
+    response body:
+
+    ```
+    {
+        "cost": 900.0,
+        "id": 1,
+        "quantity": 600,
+        "title": "How to get a good grade in DOS in 20 minutes a day",
+        "topic": "distributed systems"
+    }
+    ```
+
+  - bad body request:
+
+    request: `PUT http://fron-end server/update/item/1`
+
+    request body:
+
+    ```
+    {
+        "gool" : 900
     }
     ```
 
@@ -337,7 +371,7 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "quantity" : 900
+        "quantity" : 900
     }
     ```
 
@@ -347,13 +381,13 @@ In the table clarify the cases in which the order server may respond:
 
     ```
     {
-    "message": "There is no book with this ID"
+        "message": "There is no book with this ID"
     }
     ```
 
-- The output of the buy process
+- Buy output
 
-  - there are book with this ID:
+  - there is book with this ID:
 
         request: `PUT http://fron-end server/buy/1`
 
@@ -368,9 +402,9 @@ In the table clarify the cases in which the order server may respond:
         }
         ```
 
-  - there is book with this ID but not avaiable at the stock :
+  - the book out of stock :
 
-    request: `PUT http://fron-end server/update/item/2`
+    request: `PUT http://fron-end server/buy/2`
 
     response status: `401 GONE`
 
@@ -384,7 +418,7 @@ In the table clarify the cases in which the order server may respond:
 
   - there is no book with this ID:
 
-    request: `PUT http://fron-end server/update/item/10`
+    request: `PUT http://fron-end server/buy/10`
 
     response status: `404 NOT FOUND`
 
@@ -396,7 +430,7 @@ In the table clarify the cases in which the order server may respond:
     }
     ```
 
-### order server:
+## order server:
 
 - The output of the buy process from the order side veiw
 
@@ -443,7 +477,7 @@ In the table clarify the cases in which the order server may respond:
     }
     ```
 
-### catalog server:
+## catalog server:
 
 - Search, lookup, buy, update price, and update quntity replies are the same as in order and front-end server.
 - check the book quantity:
