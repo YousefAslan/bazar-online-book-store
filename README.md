@@ -75,7 +75,6 @@ The goal of the catalog microservices is to store and display the book's informa
 | check the book quantity | GET    | /verify_item_in_stock/ | `empty`                                                                         | `200` if book the book available and its return book id and quantity, `410` if this book is being sold in this store but is not available right now out, `404` if this book is not being sold here                                                                  | order           |
 | buy                     | PUT    | /buy/                  | `empty`                                                                         | `204` if the purchase process done at the catalog side and the catalog database updated, `410` if this book is being sold in this store but is not available right now out, otherwise it will return `404` to indicate that the book out of stock or does not exist | order           |
 | sync                    | PUT    | /sync                  | `{ "id": 1, "title": "spring", "quantity": 12, "cost": 10, "topic": "spring" }` | `200` if the catalog database updated, otherwise if the server can not handle it `400` will returned                                                                                                                                                                | another catalog |
-|                         |        |                        |                                                                                 |                                                                                                                                                                                                                                                                     |                 |
 
 ## Order
 
@@ -140,8 +139,6 @@ The update operation is divided into two operations, quantity or price update of
 | --------------- | ------------ | ------------ |
 | Update price    | 46.7         | 49.6         |
 | Update quantity | 46.8         | 61.1         |
-
-The following pictures show the responce time for each request
 
 The following pictures show the responce time for each request
 | ![Image](./AttachedFiles/UpdatePrice.png) | ![Image](./AttachedFiles/UpdateQuantity.png) |
