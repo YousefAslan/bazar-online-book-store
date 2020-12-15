@@ -8,15 +8,13 @@ from server_configuration import *
 def search(topic):
     """
     handle the comming request form the front-end server to get all book with topic shown inside the get request
-    In the beginning, when the request arrives, 
-    it performs a query on the database  to ask us for all books under this topic.
-    Then check if query response if there is any books under this topic and send it unser 200 status code 
-    otherwise the server will responce with 410 status code with message says there are no books under ths topic right now  
     """
-    # books = Book.query.filter_by(topic= topic).all()
+
     try:
+        # try to get orders from database under this topic
         books = Book.query.filter_by(topic=topic).all()
         if len(books) > 0:
+            # if there is books under this topic return list contains them
             return books_schema.jsonify(books), 200
         else:
             return {"message": "There are no books under this topic"}, 404
@@ -28,7 +26,6 @@ def search(topic):
 def lookup(id):
     """
     handle the comming request form the front-end server to get more infromation about specific booksing its id shown inside the get request
-
     """
     # get the book with id sends inside the request
     book = Book.query.get(id)
@@ -42,8 +39,11 @@ def lookup(id):
 
 @catalog_server.route("/verify_item_in_stock/<int:id>", methods=['GET'])
 def verify_item_in_stock(id):
-
-    # get the book with id sends inside the request
+    """
+    update the price for the book with id send to this end-point
+    the body request contains the new price
+    """
+    # get the book with id
     book = Book.query.get(id)
     # check if there is a book with that id if not send a message with 404 says there is no book with this id
     if book:
@@ -60,18 +60,21 @@ def verify_item_in_stock(id):
 @catalog_server.route("/update/price/<int:id>", methods=['PUT'])
 def update_cost(id):
     """
-    update the price of the book with id equal to the book id sends with the put request
-    the new price was send insed the http body under price variable
-    then its send the response to the front-end server
-
+    update the price for the book with id send to this end-point
+    the body request contains the new price
     """
+    # get the book from database
     book = Book.query.get(id)
+    # prepare the response
     headers = {'Content-type': 'application/json'}
     json = None
     if book:
+        # check the correctness of the body request
         if 'price' in request.json and isinstance(request.json['price'], numbers.Number):
+            # update the book price
             book.cost = request.json['price']
             try:
+                # send invalidate to the frint-end server to delete this instance from the cache
                 response = requests.delete(
                     front_end_server + '/invalidate/' + str(id), timeout=(0.3, 2))
             except:
@@ -79,12 +82,15 @@ def update_cost(id):
             headers = {'Content-type': 'application/json'}
             json = book_schema.dump(book)
             try:
+                # try to send sync to the 2nd catalog server
                 response = requests.put(
                     second_catalog_server + '/sync', headers=headers, json=json)
             except:
+                # if the catalog does not respond send it to recovery server
                 json["server"] = second_catalog_server
                 response = requests.post(
                     recovery_server + '/addBook', json=json, headers=headers)
+            # commit the unpdate
             db.session.commit()
             return book_schema.jsonify(book), 200
 
@@ -97,16 +103,15 @@ def update_cost(id):
 @catalog_server.route("/update/item/<int:id>", methods=['PUT'])
 def update_item_number(id):
     """
-    update number of the book at the stocks with id equal to the book id sends with the put request
-    the new quantity inside the http body under price quantity
-    then its send the response to the front-end server
-
+    update the quantity for the book with id send to this end-point
+    the body request contains the new quantity
     """
     book = Book.query.get(id)
     if book:
         if 'quantity' in request.json and isinstance(request.json['quantity'], numbers.Number):
             book.quantity = request.json['quantity']
             try:
+                # send invalidate to the front-end server to delete this instance from the cache
                 response = requests.delete(
                     front_end_server + '/invalidate/' + str(id), timeout=(0.3, 2))
             except:
@@ -114,12 +119,15 @@ def update_item_number(id):
             headers = {'Content-type': 'application/json'}
             json = book_schema.dump(book)
             try:
+                # try to send sync to the 2nd catalog server
                 response = requests.put(
                     second_catalog_server + '/sync', headers=headers, json=json)
             except:
+                # if the catalog does not respond send it to recovery server
                 json["server"] = second_catalog_server
                 response = requests.post(
                     recovery_server + '/addBook', json=json, headers=headers)
+            # commit the unpdate
             db.session.commit()
             return book_schema.jsonify(book), 200
         else:
@@ -213,12 +221,18 @@ def append():
 
 @catalog_server.before_first_request
 def checkAnyUpdates():
+    """
+    before first request the server check if there is any updates inside the recovery server
+    """
     try:
         headers = {'Content-type': 'application/json'}
         json = {'server': this_server}
+        # send getUpdates to recovery server
         response = requests.get(
             recovery_server + '/getUpdates', headers=headers, json=json)
         book = None
+        # for each update check if there is book with same id
+        # if there is update it else create a new one
         for updatedBook in response.json():
             book = Book.query.get(updatedBook['id'])
             if book:

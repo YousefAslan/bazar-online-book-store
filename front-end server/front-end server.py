@@ -28,6 +28,8 @@ catalog_servers = ["http://192.168.1.20:2030", "http://192.168.1.21:2031"]
 order_servers = ["http://192.168.1.30:2040", "http://192.168.1.31:2041"]
 nextSelectedServer = 0
 
+# list represent the search and lookup cache
+# contains dict represent the data
 searchCache = []
 lookupCache = []
 
@@ -42,20 +44,25 @@ def search(topic):
     and await a response from the catalog to be responded on the end-user.
 
     """
-    # print(searchCache)
+    # check the cache content
     cache = checkCache(RequestType.SEARCH, topic)
+    # if cache miss try to get info from catlog server
     if not cache:
         for attempt in range(len(catalog_servers)):
+            # select the server based on round robin scheduling
             selectedServer = selectServer(ServerType.CATALOG)
             try:
+                # send the search to selected server
                 responce = requests.get(
                     selectedServer + '/search/' + topic, timeout=(0.3, 2))
+                # if the response contains book cache them
                 if responce.status_code == 200:
                     searchCache.extend(responce.json())
                 return jsonify(responce.json()), responce.status_code
             except:
                 pass
         return {"message": " server is not ready to handle the request"}, 503
+    # if cache hit return the caching result
     else:
         # print(searchCache)
         return jsonify(cache), 200
@@ -69,19 +76,25 @@ def lookup(id):
     and response to the end-user
 
     """
+    # check the cache content
     cache = checkCache(RequestType.LOOKUP, id)
+    # if cache miss try to get info from catlog server
     if not cache:
         for attempt in range(len(catalog_servers)):
+            # select the server based on round robin scheduling
             selectedServer = selectServer(ServerType.CATALOG)
             try:
+                # send the lookup query to selected server
                 responce = requests.get(
                     selectedServer + '/lookup/' + str(id), timeout=(0.3, 2))
+                # if the response contains book cache them
                 if responce.status_code == 200:
                     lookupCache.append(responce.json())
                 return jsonify(responce.json()), responce.status_code
             except:
                 pass
         return {"message": " server is not ready to handle the request"}, 503
+    # if cache hit return cache result
     else:
         return jsonify(cache[0]), 200
 
@@ -96,9 +109,11 @@ def update_price(id):
 
     headers = {'Content-type': 'application/json'}
     jsons = request.json
+    # select the server based on round robin scheduling
     for attempt in range(len(catalog_servers)):
         selectedServer = selectServer(ServerType.CATALOG)
         try:
+            # send update request to the selected one
             responce = requests.put(selectedServer + '/update/price/' +
                                     str(id), json=jsons, headers=headers, timeout=(0.3, 2))
             return jsonify(responce.json()), responce.status_code
@@ -116,9 +131,11 @@ def update_item_number(id):
     """
     headers = {'Content-type': 'application/json'}
     jsons = request.json
+    # select the server based on round robin scheduling
     for attempt in range(len(catalog_servers)):
         selectedServer = selectServer(ServerType.CATALOG)
         try:
+            # send update request to the selected one
             responce = requests.put(selectedServer + '/update/item/' +
                                     str(id), json=jsons, headers=headers, timeout=(0.3, 2))
             return jsonify(responce.json()), responce.status_code
@@ -137,10 +154,14 @@ def buy(id):
     """
 
     for attempt in range(len(catalog_servers)):
+        # select the server based on round robin scheduling
         selectedServer = selectServer(ServerType.ORDER)
         try:
+            # send but request to the order server selected
             responce = requests.put(
                 selectedServer + '/buy/' + str(id), timeout=(0.3, 4))
+            # if the operation applied successfully or book out of stock
+            # else it will try to send the request to the second server
             if responce.status_code != 503:
                 return jsonify(responce.json()), responce.status_code
         except:
@@ -153,6 +174,7 @@ def invalidate(id):
     """
     invalidate request comes from any back-end server to invalidate item cached value
     """
+    # remove each element under this id
     global searchCache, lookupCache
     searchCache = [book for book in searchCache if book['id'] != id]
     lookupCache = [book for book in lookupCache if book['id'] != id]
@@ -176,6 +198,7 @@ def method_not_allowed(e):
 def selectServer(serverType: ServerType):
     """
     select which replica responsible for handling this request
+    round robin scheduling is used at the implementation
     """
     global nextSelectedServer
     nextSelectedServer = (nextSelectedServer+1) % len(order_servers)
@@ -185,7 +208,8 @@ def selectServer(serverType: ServerType):
 
 def checkCache(requestType: RequestType, data):
     """
-    docstring
+    based on the request type (search of lookup) 
+    select which list should be checked
     """
     toReturn = None
     # print(lookupCache)
