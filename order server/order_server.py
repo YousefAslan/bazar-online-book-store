@@ -9,7 +9,7 @@ def buy(id):
     this method response to handle the buy request comes from the fron-end server to be completed the purchase order
     """
     try:
-        # ensure that the book is in stocks vias send requiest to the catalog server
+        # check the quantity of this book
         responce = requests.get(
             catalog_server + '/verify_item_in_stock/' + str(id), timeout=(0.3, 2))
         #  if status code 200 and which means there is books at the stock
@@ -17,18 +17,22 @@ def buy(id):
         if responce.status_code == 200 and responce.json()['quantity'] > 0:
             responce = requests.put(
                 catalog_server + '/buy/' + str(id), timeout=(0.3, 3))
+            #  if the order done
             if responce.status_code == 204:
+                #  add the order to the databse
                 orders = Orders(id)
                 db.session.add(orders)
                 db.session.commit()
                 headers = {'Content-type': 'application/json'}
                 json = order_schema.dump(orders)
                 try:
+                    # try to send sync to 2nd order include book id
                     responce = requests.put(
                         second_order_server + '/sync', json=json, headers=headers, timeout=(0.3, 2))
                     if responce.status_code != 200:
                         return {"message": " the server cannot or will not process the request due to something perceived to be a client error"}, 400
                 except:
+                    # if 2nd order doesn't respond send it to the recovery server
                     json["server"] = second_order_server
                     response = requests.post(
                         recovery_server + '/addOrder', json=json, headers=headers, timeout=(0.3, 2))
@@ -65,10 +69,11 @@ def checkAnyUpdates():
     try:
         headers = {'Content-type': 'application/json'}
         json = {'server': this_server}
+        # send getOrder to recovery server
         response = requests.get(
             recovery_server + '/getOrder', headers=headers, json=json, timeout=(0.3, 5))
         order = None
-
+        # if there is new order added to database
         for newOrders in response.json():
             order = Orders.query.get(newOrders['order_id'])
             if not order:
