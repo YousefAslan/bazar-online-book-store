@@ -34,9 +34,11 @@ def buy(id):
                 except:
                     # if 2nd order doesn't respond send it to the recovery server
                     json["server"] = second_order_server
-                    response = requests.post(
-                        recovery_server + '/addOrder', json=json, headers=headers, timeout=(0.3, 2))
-
+                    try:
+                        response = requests.post(
+                            recovery_server + '/addOrder', json=json, headers=headers, timeout=(0.3, 2))
+                    except:
+                        return {"message": "The server is not ready to handle the request"}, 503
                 return order_schema.jsonify(orders), 201
             else:
                 return {"message": "This book is currently unavailable"}, 410

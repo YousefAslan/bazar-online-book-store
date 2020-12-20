@@ -86,8 +86,11 @@ def update_cost(id):
             except:
                 # if the catalog does not respond send it to recovery server
                 json["server"] = second_catalog_server
+            try:
                 response = requests.post(
                     recovery_server + '/addBook', json=json, headers=headers)
+            except:
+                return {"message": "The server is not ready to handle the request"}, 503
             # commit the unpdate
             db.session.commit()
             return book_schema.jsonify(book), 200
@@ -125,8 +128,11 @@ def update_item_number(id):
             except:
                 # if the catalog does not respond send it to recovery server
                 json["server"] = second_catalog_server
+            try:
                 response = requests.post(
                     recovery_server + '/addBook', json=json, headers=headers)
+            except:
+                return {"message": "The server is not ready to handle the request"}, 503
             # commit the unpdate
             db.session.commit()
             return book_schema.jsonify(book), 200
@@ -163,8 +169,11 @@ def buy(id):
                     second_catalog_server + '/sync', headers=headers, json=json, timeout=(0.3, 2))
             except:
                 json["server"] = second_catalog_server
+            try:
                 response = requests.post(
                     recovery_server + '/addBook', json=json, headers=headers, timeout=(0.3, 5))
+            except:
+                return {"message": "The server is not ready to handle the request"}, 503
             db.session.commit()
             return {}, 204
         else:
